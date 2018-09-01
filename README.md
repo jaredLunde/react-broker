@@ -1,4 +1,6 @@
+![Wolf of Wall Street gif](https://media.giphy.com/media/8Q31McooUHTNu/giphy.gif)
 # `react-broker`
+
 Asynchronous components for React 16.3+ perfect for code splitting and the
 simplest SSR story you've ever seen out-of-the-box.
 
