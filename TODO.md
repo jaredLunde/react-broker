@@ -2,8 +2,8 @@
 - [ ] Don't 'join' if the path isn't relative (doesn't `.startWith('./')`)
 
 ### lazy
-- [ ] lazy.getChunkScripts([webpackStats, chunkNames])
-  - [ ] graphChunks(findChunks(clientStats, chunkNames))
+- [x] lazy.getChunkScripts([webpackStats, chunkNames])
+  - [x] graphChunks(findChunks(clientStats, chunkNames))
 
 # future
 - [ ] Accept multiple loaders

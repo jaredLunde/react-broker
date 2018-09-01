@@ -127,16 +127,9 @@ export class LazyProvider extends React.Component {
 }
 
 
-export default function lazy (
-  promise,
-  opt = {
-    loading: null,
-    error: null
-  },
-  chunkName
-) {
-  let state = {}
+const defaultOpt = {loading: null, error: null}
 
+export default function lazy (promise, opt = defaultOpt, chunkName) {
   class Lazy extends React.Component {
     isLazyComponent = true
     unmounted = false
@@ -191,11 +184,7 @@ export default function lazy (
   }
 
   return function LazyConsumer (props) {
-    return (
-      <Consumer>
-        {cxt => <Lazy lazy={cxt} {...props}/>}
-      </Consumer>
-    )
+    return <Consumer children={cxt => <Lazy lazy={cxt} {...props}/>}/>
   }
 }
 
