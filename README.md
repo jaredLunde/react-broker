@@ -1,5 +1,5 @@
 # `react-broker`
-Asynchronous components for React 16.3+ for code splitting and the
+Asynchronous components for React 16.3+ perfect for code splitting and the
 simplest SSR story you've ever seen out-of-the-box.
 
 ```js
@@ -47,12 +47,12 @@ function App (props) {
 --------------------------------------------------------------------------------
 
 ## Documentation
-#### `react-broker/macro`
+### `react-broker/macro`
 The function that transforms your imports and delegates your async components.
 
 --------------------------------------------------------------------------------
 
-#### `Lazy`
+### `Lazy`
 This is the component created by `react-broker/macro`.
 #### `Lazy.load()`
 Preloads the component.
@@ -61,14 +61,14 @@ Retries loading the component in the event of a failure.
 
 --------------------------------------------------------------------------------
 
-#### `Broker.Provider`
+### `Broker.Provider`
 Manages code-splitting and the resolution of your async components by
 keeping track of which chunk names have been loaded and also determining
 which `<scripts>` need to be included from the server-side.
 
 --------------------------------------------------------------------------------
 
-#### `createChunkCache`
+### `Broker.createChunkCache`
 Creates a context for `Broker.Provider` to track chunks in and provides
 helper methods to provide access to those chunks.
 ##### `createChunkCache.getChunkNames()`
@@ -81,11 +81,11 @@ output of your app when using with SSR.
 
 --------------------------------------------------------------------------------
 
-#### `load(Lazy: Array)`
+### `Broker.load(Lazy: Array)`
 Preloads one or several `Lazy` components.
 
 --------------------------------------------------------------------------------
 
-#### `loadAll(App: React.Element)`
+### `Broker.loadAll(App: React.Element)`
 Preloads all of the components in your app. This is used on the server-side and
 in the pre-render phase of the client.
