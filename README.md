@@ -12,12 +12,12 @@ import lazy from 'react-broker/macro'
 const LazyPage = lazy('../pages/Page', {loading: () => 'Loading...'})
 ////////////////////////////////////////////////////////////////////////////////
 //                               ⬇ BECOMES ⬇                                //
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 const LazyPage = require('react-broker/lazy').default(
   new Promise(function (resolve) {
     return require.ensure(
       [],
-      function (require) {resolve(require(IMPORT))},
+      function (require) {resolve(require('../pages/Page'))},
       'pages/Page'
     )
   }),
