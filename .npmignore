@@ -1,0 +1,4 @@
+# Remote Sync
+node_modules
+.babelrc
+*.log

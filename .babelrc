@@ -1,0 +1,17 @@
+{
+  "presets": [
+    "@inst-app/react"
+  ],
+  "env": {
+    "cjs": {
+      "presets": [
+        "@inst-app/esx"
+      ]
+    },
+    "es": {
+      "presets": [
+        ["@inst-app/esx", {"env": {"modules": false}}]
+      ]
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "name": "react-broker",
+  "version": "1.0.0-alpha.1",
+  "description": "Component lazy-loading + code splitting that works with SSR, Webpack 4, and Babel 7",
+  "main": "cjs/index.js",
+  "repository": "https://github.com/jaredLunde/react-broker",
+  "author": "Jared Lunde",
+  "license": "MIT",
+  "private": false,
+  "devDependencies": {
+    "@inst-app/babel-preset-esx": "^1.0.0",
+    "@inst-app/babel-preset-react": "^1.0.0",
+    "prettier": "^1.14.2",
+    "rimraf": "^2.6.2"
+  },
+  "scripts": {
+    "build": "npm run build:es && npm run build:cjs",
+    "build:es": "npm run build-lazy:es && npm run build-macro:es",
+    "build:cjs": "npm run build-lazy:cjs && npm run build-macro:cjs",
+    "build-lazy:es": "rimraf es && cross-env NODE_ENV=production cross-env BABEL_ENV=es babel src/lazy --out-dir es && npm run prettier:es",
+    "build-lazy:cjs": "rimraf cjs && cross-env NODE_ENV=production cross-env BABEL_ENV=cjs babel src/lazy --out-dir cjs && npm run prettier:cjs",
+    "build-macro:es": "rimraf broker.macro.js && cross-env NODE_ENV=production cross-env BABEL_ENV=es babel src/macro/index.js -o broker.macro.js",
+    "build-macro:cjs": "rimraf broker.cjs.macro.js && cross-env NODE_ENV=production cross-env BABEL_ENV=cjs babel src/macro/index.js -o broker.cjs.macro.js",
+    "watch": "cross-env NODE_ENV=development cross-env BABEL_ENV=es babel ./src -w --out-dir es",
+    "prettier:es": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"es/**/*.js\"",
+    "prettier:cjs": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"cjs/**/*.js\""
+  },
+  "peerDependencies": {
+    "prop-types": "^15.x",
+    "react": "^16.x",
+    "react-dom": "^16.x"
+  },
+  "tags": [
+    "async component",
+    "react",
+    "universal component",
+    "ssr",
+    "code splitting"
+  ]
+}
