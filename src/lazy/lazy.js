@@ -2,8 +2,8 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {CDLL} from 'cdll-memoize'
 import emptyObj from 'empty/object'
-import getDisplayName from 'react-display-name'
 import reactTreeWalker from 'react-tree-walker'
+import {getChunkScripts, graphChunks} from './utils'
 
 
 const {Provider, Consumer} = React.createContext({})
@@ -12,30 +12,35 @@ const LOADING = 1
 const RESOLVED = 2
 const REJECTED = 3
 
-CDLL.prototype.forEach = function (cb) {
-  let next = this.head.next
-  cb(next.value)
-  while (next !== this.head) {
-    cb(next.value)
-    next = next.next
+
+export const createChunkCache = () => {
+  const map = new Map()
+  const cache = {
+    get: map.get.bind(map),
+    set: map.set.bind(map),
+    getChunkNames: () => Array.from(map.keys()),
+    getChunks: stats => graphChunks(stats, cache.getChunkNames()),
+    getChunkScripts: stats => getChunkScripts(stats, cache.getChunks(stats))
   }
+
+  return cache
 }
 
-function visitor (element, instance) {
-  if (instance && instance.isBrokerComponent === true) {
+export const load = components => Promise.all(components.map(c => c.load()))
+
+function loadAllVisitor (element, instance) {
+  if (instance && instance.isLazyComponent === true) {
     return instance.pointer
   }
 }
 
-export const createChunkCache = () => new Map()
-export const load = components => Promise.all(components.map(c => c.pointer))
-export const loadAll = app => reactTreeWalker(app, visitor, emptyObj)
+export const loadAll = app => reactTreeWalker(app, loadAllVisitor, emptyObj)
 
 
-export class BrokerProvider extends React.Component {
+export class LazyProvider extends React.Component {
   constructor (props) {
     super(props)
-    this.chunkCache = props.chunkCache || new Map()
+    this.chunkCache = props.chunkCache || createChunkCache()
     this.providerContext = {
       load: this.load,
       subscribe: this.subscribe,
@@ -133,7 +138,7 @@ export default function lazy (
   let state = {}
 
   class Lazy extends React.Component {
-    isBrokerComponent = true
+    isLazyComponent = true
     unmounted = false
     pointer = promise()
 
@@ -156,13 +161,13 @@ export default function lazy (
       this.props.lazy.unsubscribe(chunkName, this)
     }
 
-    resolved = component => this.setState({
-      status: RESOLVED,
-      error: null,
-      component,
-    })
+    resolved = this.unmounted === false && (
+      component => this.setState({status: RESOLVED, error: null, component})
+    )
 
-    rejected = error => this.setState({status: REJECTED, error})
+    rejected = this.unmounted === false && (
+      error => this.setState({status: REJECTED, error})
+    )
 
     retry = () => this.props.lazy.load(this.pointer, chunkName)
     static load = promise
@@ -197,4 +202,4 @@ export default function lazy (
 lazy.load = load
 lazy.loadAll = loadAll
 lazy.createChunkCache = createChunkCache
-lazy.Provider = BrokerProvider
+lazy.Provider = LazyProvider

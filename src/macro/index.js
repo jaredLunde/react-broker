@@ -58,7 +58,7 @@ function makeDynamicImport ({references, state, babel, referencePath}) {
   const chunkName = chunkNameCache.get(source)
 
   const impTemplate = template(`
-    require('react-broker').default(
+    require('@inst-app/ssr/lazy').default(
       IMPORT,
       OPTIONS,
       CHUNK_NAME
@@ -97,7 +97,7 @@ function makeLegacyEnsure ({references, state, babel, referencePath}) {
     })
   `)
   const impTemplate = template(`
-    require('react-broker').default(
+    require('@inst-app/ssr/lazy').default(
       IMPORT,
       OPTIONS,
       CHUNK_NAME

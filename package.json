@@ -13,6 +13,18 @@
     "prettier": "^1.14.2",
     "rimraf": "^2.6.2"
   },
+  "dependencies": {
+    "@babel/runtime": "^7.0.0",
+    "babel-plugin-macros": "^2.4.0",
+    "cdll-memoize": "^0.1.5",
+    "empty": "^0.10.1",
+    "react-tree-walker": "^4.3.0"
+  },
+  "peerDependencies": {
+    "prop-types": "^15.x",
+    "react": "^16.x",
+    "react-dom": "^16.x"
+  },
   "scripts": {
     "build": "npm run build:es && npm run build:cjs",
     "build:es": "npm run build-lazy:es && npm run build-macro:es",
@@ -24,11 +36,6 @@
     "watch": "cross-env NODE_ENV=development cross-env BABEL_ENV=es babel ./src -w --out-dir es",
     "prettier:es": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"es/**/*.js\"",
     "prettier:cjs": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"cjs/**/*.js\""
-  },
-  "peerDependencies": {
-    "prop-types": "^15.x",
-    "react": "^16.x",
-    "react-dom": "^16.x"
   },
   "tags": [
     "async component",
