@@ -1,5 +1,5 @@
 ### Macro
-- [ ] Don't 'join' if the path isn't relative (doesn't `.startWith('./')`)
+- [x] Don't 'join' if the path isn't relative (doesn't `.startWith('./')`)
 
 ### lazy
 - [x] lazy.getChunkScripts([webpackStats, chunkNames])
@@ -20,7 +20,10 @@
             return (
               <main>
                 <LazyPage id={params.id}>
-                  {(Page, data) => <Page {...data}/>}}
+                  {(Page, data, broker) =>
+                    broker.isDone && (
+                      <Page {...data}/>
+                    )}
                 </LazyPage>
 
                 <a onMouseEnter={NextLazyPage.load}>
@@ -32,3 +35,22 @@
         }
 
         ```
+
+### Need to know:
+- referencePath.parentPath.get('arguments')
+  - [i].type (StringLiteral, ObjectExpression, ArrowFunctionExpression, FunctionExpression)
+- StringLiteral
+  - .node.value
+- ObjectExpression
+  - .node.properties
+    - [i]
+      - .key.name
+      - value.name
+- ArrayExpression
+  - .node.elements
+    - [i]
+      - .value
+      - .type (
+        StringLiteral,
+        ArrowFunctionExpression/FunctionExpression [.body]
+      )

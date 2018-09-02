@@ -1,194 +1,191 @@
-import React from 'react'
-import PropTypes from 'prop-types'
-import {CDLL} from 'cdll-memoize'
-import emptyObj from 'empty/object'
-import reactTreeWalker from 'react-tree-walker'
-import {getChunkScripts, graphChunks} from './utils'
+import path from 'path'
+import crypto from 'crypto'
+import {createMacro} from 'babel-plugin-macros'
 
 
-const {Provider, Consumer} = React.createContext({})
-const WAITING = 0
-const LOADING = 1
-const RESOLVED = 2
-const REJECTED = 3
+const pkgName = 'react-broker'
+export default createMacro(evaluateMacros)
 
-
-export const createChunkCache = () => {
-  const map = new Map()
-  const cache = {
-    get: map.get.bind(map),
-    set: map.set.bind(map),
-    getChunkNames: () => Array.from(map.keys()),
-    getChunks: stats => graphChunks(stats, cache.getChunkNames()),
-    getChunkScripts: stats => getChunkScripts(stats, cache.getChunks(stats))
-  }
-
-  return cache
+function evaluateMacros({references, state, babel}) {
+  references.default.forEach(referencePath => makeLegacyEnsure({
+    references,
+    state,
+    babel,
+    referencePath
+  }))
 }
 
-export const load = components => Promise.all(components.map(c => c.load()))
+function makeLegacyEnsure ({references, state, babel, referencePath}) {
+  //const brokerTemplate = babel.template(`Broker(PROMISES, OPTIONS)`)
+  const brokerTemplate = babel.template(`
+    (typeof Broker !== 'undefined' ? Broker : require('${pkgName}').default)(
+      PROMISES,
+      OPTIONS
+    )
+  `)
+  const promises = parseArguments(
+    referencePath.parentPath.get('arguments')[0],
+    state,
+    babel
+  )
 
-function loadAllVisitor (element, instance) {
-  if (instance && instance.isLazyComponent === true) {
-    return instance.pointer
-  }
+  let options = referencePath.parentPath.get('arguments')[1]
+  options = options && options.expression
+
+  referencePath.parentPath.replaceWith(
+    brokerTemplate({
+      PROMISES: toObjectExpression(promises, babel),
+      OPTIONS: options
+      // OPTIONS: toObjectExpression(options, babel)
+    })
+  )
 }
 
-export const loadAll = app => reactTreeWalker(app, loadAllVisitor, emptyObj)
+
+function toObjectExpression (obj, {types: t, template}) {
+  const properties = []
+
+  for (let key in obj) {
+    properties.push(t.objectProperty(t.stringLiteral(key), obj[key]))
+  }
+
+  return t.objectExpression(properties)
+}
 
 
-export class LazyProvider extends React.Component {
-  constructor (props) {
-    super(props)
-    this.chunkCache = props.chunkCache || createChunkCache()
-    this.providerContext = {
-      load: this.load,
-      subscribe: this.subscribe,
-      unsubscribe: this.unsubscribe,
-      getStatus: this.getStatus,
-      getComponent: this.getComponent
+const absolutePkg = /^[.\/]/g
+
+function parseArguments (args, state, babel) {
+  const {file: {opts: {filename}}} = state
+  const {types: t, template} = babel
+  const esureTemplate = babel.template(`
+    new Promise(
+      function (resolve) {
+        return require.ensure(
+          [],
+          function (require) { resolve(require(SOURCE)) },
+          'CHUNK_NAME'
+        )
+      }
+    )
+  `)
+  let chunkName, source
+  const promises = {}
+  args = Array.isArray(args) ? args : [args]
+
+  for (let arg of args) {
+    switch (arg.type) {
+      case 'StringLiteral':
+        // Imports
+        const node = arg.node !== void 0 ? arg.node : arg
+        source =
+          node.value.match(absolutePkg) === null
+            ? node.value
+            : path.join(path.dirname(filename), node.value)
+        chunkName = chunkNameCache.get(source)
+
+        if (promises[chunkName] !== void 0) {
+          throw new Error(`[Broker Error] duplicate import: ${source}`)
+        }
+
+        promises[chunkName] = t.arrowFunctionExpression(
+          [],
+          esureTemplate({
+            SOURCE: t.stringLiteral(source),
+            CHUNK_NAME: chunkName
+          }).expression
+        )
+      break;
+      case 'ArrayExpression':
+        const arrPromises = parseArguments(arg.node.elements, state, babel)
+        Object.assign(promises, arrPromises)
+      break;
+      case 'Identifier':
+      case 'FunctionExpression':
+      case 'ArrowFunctionExpression':
+        // Functions which return promises
+        source = state.file.code.slice(arg.start, arg.end)
+        chunkName = chunkNameCache.get(source, true)
+
+        if (promises[chunkName] !== void 0) {
+          throw new Error(`[Broker Error] duplicate promise: ${source}`)
+        }
+
+        promises[chunkName] = arg
+      break;
+      /**
+      case 'ObjectExpression':
+        // Lazy options
+        for (let property of arg.node.properties) {
+          options[property.key.name] = property.value
+        }
+      break;
+      */
+      default:
+        throw new Error('[Broker Error] Unrecognized argument type:', arg.type)
     }
   }
 
-  getStatus = chunkName => {
-    const meta = this.chunkCache.get(chunkName)
-    return meta === void 0 ? WAITING : meta.status
-  }
+  return promises
+}
 
-  getComponent = chunkName => {
-    const chunk = this.chunkCache.get(chunkName)
-    return chunk && chunk.component
-  }
 
-  subscribe = (chunkName, lazyComponent) => {
-    const chunk = this.chunkCache.get(chunkName)
+function getShortChunkName (source) {
+  return path.basename(path.dirname(source)) + '/' + path.basename(source)
+}
 
-    if (chunk === void 0) {
-      const lazy = new CDLL()
-      lazy.push(lazyComponent)
-      this.chunkCache.set(chunkName, {status: WAITING, lazy})
-      return this.load(chunkName, lazyComponent.pointer)
+function getObjChunkName (source) {
+  const hash = crypto.createHash('sha1')
+  hash.update(source)
+  return hash.digest('hex')
+}
+
+class ChunkNameCache {
+  chunks = {}
+  chunkNames = new Set()
+
+  get (source, isFunction = false) {
+    let name
+
+    if (isFunction === false) {
+      name = getShortChunkName(source)
     }
     else {
-      chunk.lazy.push(lazyComponent)
-      return lazyComponent.pointer
-    }
-  }
-
-  unsubscribe = (chunkName, lazyComponent) => {
-    const chunk = this.chunkCache.get(chunkName)
-    const element = chunk.lazy.find(lazyComponent)
-    element !== void 0 && chunk.lazy.delete(element)
-  }
-
-  load = (chunkName, pointer) => {
-    const chunk = this.chunkCache.get(chunkName)
-
-    switch (chunk.status) {
-      case RESOLVED:
-        return Promise.resolve(chunk.component)
-      case REJECTED:
-      case WAITING:
-        this.chunkCache.set(chunkName, {...chunk, status: LOADING})
-        return pointer.then(
-          component => this.resolved(chunkName, component),
-          err => this.rejected(chunkName, err)
-        )
+      name = getObjChunkName(source)
     }
 
-    return pointer
-  }
-
-  resolved = (chunkName, component) => {
-    const meta = this.chunkCache.get(chunkName)
-
-    if (meta.status !== RESOLVED) {
-      meta.status = RESOLVED
-      meta.component = component.default === void 0 ? component : component.default
-      meta.lazy.forEach(c => c.resolved(meta.component))
+    if (this.chunks[source]) {
+      return this.chunks[source]
     }
 
-    return component
-  }
+    let originalName = name
+    let i = 0
 
-  rejected = (chunkName, err) => {
-    const meta = this.chunkCache.get(chunkName)
-
-    if (meta.status !== REJECTED) {
-      meta.status = REJECTED
-      meta.lazy.forEach(c => c.rejected(err))
-    }
-  }
-
-  render () {
-    const children = React.Children.only(this.props.children)
-    return <Provider value={this.providerContext} children={children}/>
-  }
-}
-
-
-const defaultOpt = {loading: null, error: null}
-
-export default function lazy (promise, opt = defaultOpt, chunkName) {
-  class Lazy extends React.Component {
-    isLazyComponent = true
-    unmounted = false
-    pointer = promise()
-
-    static propTypes = {
-      lazy: PropTypes.object,
-      loading: PropTypes.func,
-      error: PropTypes.func
-    }
-
-    constructor (props) {
-      super(props)
-      const status = props.lazy.getStatus(chunkName)
-      const component = props.lazy.getComponent(chunkName)
-      status !== RESOLVED && props.lazy.subscribe(chunkName, this)
-      this.state = {status, component, error: null}
-    }
-
-    componentWillUnmount () {
-      this.unmounted = true
-      this.props.lazy.unsubscribe(chunkName, this)
-    }
-
-    resolved = this.unmounted === false && (
-      component => this.setState({status: RESOLVED, error: null, component})
-    )
-
-    rejected = this.unmounted === false && (
-      error => this.setState({status: REJECTED, error})
-    )
-
-    retry = () => this.props.lazy.load(this.pointer, chunkName)
-    static load = promise
-
-    render () {
-      const {status, component, error} = this.state
-      let props = Object.assign({}, this.props)
-      delete props.lazy
-
-      switch (status) {
-        case WAITING:
-        case LOADING:
-          return opt.loading ? opt.loading(props) : null
-        case REJECTED:
-          props.retry = this.retry
-          return opt.loading ? opt.error(props, error) : null
-        case RESOLVED:
-          return React.createElement(component, props)
+    while (true) {
+      if (this.chunkNames.has(name)) {
+        name = `${originalName}.${i}`
+        i++
+      }
+      else {
+        break
       }
     }
-  }
 
-  return function LazyConsumer (props) {
-    return <Consumer children={cxt => <Lazy lazy={cxt} {...props}/>}/>
+    this.chunkNames.add(name)
+    this.chunks[source] = name
+
+    return name
   }
 }
 
-lazy.load = load
-lazy.loadAll = loadAll
-lazy.createChunkCache = createChunkCache
-lazy.Provider = LazyProvider
+const chunkNameCache = new ChunkNameCache()
+/*
+function makeDynamicImport ({references, state, babel, referencePath}) {
+  const tpl = impTemplate({
+    IMPORT: t.arrowFunctionExpression(
+      [],
+      t.callExpression(t.import(), [t.stringLiteral(source)])
+    ),
+    OPTIONS: String(referencePath.parentPath.get('arguments')[1])
+  })}
+*/

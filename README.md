@@ -7,7 +7,6 @@ simplest SSR story you've ever seen out-of-the-box.
 ```js
 import Broker from 'react-broker'
 import lazy from 'react-broker/macro'
-// for cjs modules: import lazy from 'react-broker/cjs.macro'
 
 // Automatically generates require.ensure/dynamic imports for webpack with
 // babel-plugin-macros. Just give it the path.
@@ -54,7 +53,7 @@ The function that transforms your imports and delegates your async components.
 
 --------------------------------------------------------------------------------
 
-### `Lazy`
+### `Broker.Lazy`
 This is the component created by `react-broker/macro`.
 #### `Lazy.load()`
 Preloads the component.

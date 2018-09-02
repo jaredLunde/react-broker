@@ -1,8 +1,8 @@
 # Remote Sync
 node_modules
-cjs/
-es/
+/cjs
+/es
 .DS_Store
 *.log
-broker.macro.js
-broker.cjs.macro.js
+/macro
+/cjs.macro

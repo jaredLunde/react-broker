@@ -31,11 +31,13 @@
     "build:cjs": "npm run build-lazy:cjs && npm run build-macro:cjs",
     "build-lazy:es": "rimraf es && cross-env NODE_ENV=production cross-env BABEL_ENV=es babel src/lazy --out-dir es && npm run prettier:es",
     "build-lazy:cjs": "rimraf cjs && cross-env NODE_ENV=production cross-env BABEL_ENV=cjs babel src/lazy --out-dir cjs && npm run prettier:cjs",
-    "build-macro:es": "rimraf broker.macro.js && cross-env NODE_ENV=production cross-env BABEL_ENV=es babel src/macro/index.js -o broker.macro.js",
-    "build-macro:cjs": "rimraf broker.cjs.macro.js && cross-env NODE_ENV=production cross-env BABEL_ENV=cjs babel src/macro/index.js -o broker.cjs.macro.js",
+    "build-macro:es": "rimraf macro && cross-env NODE_ENV=production cross-env BABEL_ENV=es babel src/macro --out-dir macro && npm run prettier-macro:es",
+    "build-macro:cjs": "rimraf cjs.macro && cross-env NODE_ENV=production cross-env BABEL_ENV=cjs babel src/macro --out-dir cjs.macro && npm run prettier-macro:cjs",
     "watch": "cross-env NODE_ENV=development cross-env BABEL_ENV=es babel ./src -w --out-dir es",
     "prettier:es": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"es/**/*.js\"",
-    "prettier:cjs": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"cjs/**/*.js\""
+    "prettier:cjs": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"cjs/**/*.js\"",
+    "prettier-macro:es": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"cjs.macro/**/*.js\"",
+    "prettier-macro:cjs": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"macro/**/*.js\""
   },
   "tags": [
     "async component",
