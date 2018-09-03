@@ -2,7 +2,11 @@ export default, {
   createChunkCache,
   LazyProvider,
   load,
-  loadAll
+  loadAll,
+  WAITING,
+  LOADING,
+  RESOLVED,
+  REJECTED
 } from './lazy'
 
 export {findChunks, graphChunks, getChunkScripts} from './utils'

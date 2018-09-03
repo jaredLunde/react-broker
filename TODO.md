@@ -1,15 +1,11 @@
-### Macro
-- [x] Don't 'join' if the path isn't relative (doesn't `.startWith('./')`)
-
-### lazy
-- [x] lazy.getChunkScripts([webpackStats, chunkNames])
-  - [x] graphChunks(findChunks(clientStats, chunkNames))
-
 # future
-- [ ] Accept multiple loaders
-  - [ ] Use render props-like pattern for this component
+- [x] Accept multiple loaders
+  - [x] Use render props-like pattern for this component
         ```js
-        const LazyPage = lazy(['./path/to/Page', ({id}) => fetch('...${id}.json')])
+        const LazyPage = lazy(
+          ['./path/to/Page', ({id}) => fetch('...${id}.json')],
+          shouldBrokerUpdate: (prev, next) => next.id !== prev.id
+        )
         const NextLazyPage = lazy('./path/to/NextPage', {loading: 'Loading...'})
 
 
@@ -35,22 +31,3 @@
         }
 
         ```
-
-### Need to know:
-- referencePath.parentPath.get('arguments')
-  - [i].type (StringLiteral, ObjectExpression, ArrowFunctionExpression, FunctionExpression)
-- StringLiteral
-  - .node.value
-- ObjectExpression
-  - .node.properties
-    - [i]
-      - .key.name
-      - value.name
-- ArrayExpression
-  - .node.elements
-    - [i]
-      - .value
-      - .type (
-        StringLiteral,
-        ArrowFunctionExpression/FunctionExpression [.body]
-      )

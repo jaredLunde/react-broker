@@ -1,11 +1,11 @@
 import path from 'path'
-import crypto from 'crypto'
 import {createMacro} from 'babel-plugin-macros'
 
 
 const pkgName = 'react-broker/macro'
 export default createMacro(evaluateMacros)
 
+// cycles through each call to the macro and determines an output for each
 function evaluateMacros({references, state, babel}) {
   references.default.forEach(referencePath => makeLegacyEnsure({
     references,
@@ -15,33 +15,37 @@ function evaluateMacros({references, state, babel}) {
   }))
 }
 
+// if Broker is defined in the scope then it will use that Broker, otherwise
+// it requires the module.
 function makeLegacyEnsure ({references, state, babel, referencePath}) {
-  //const brokerTemplate = babel.template(`Broker(PROMISES, OPTIONS)`)
   const brokerTemplate = babel.template(`
     (typeof Broker !== 'undefined' ? Broker : require('${pkgName}').default)(
       PROMISES,
       OPTIONS
     )
   `)
+
   const promises = parseArguments(
     referencePath.parentPath.get('arguments')[0],
     state,
     babel
   )
 
+  // component options are always in the second argument
   let options = referencePath.parentPath.get('arguments')[1]
   options = options && options.expression
 
+  // replaces the macro with the new broker template in the source code
   referencePath.parentPath.replaceWith(
     brokerTemplate({
       PROMISES: toObjectExpression(promises, babel),
       OPTIONS: options
-      // OPTIONS: toObjectExpression(options, babel)
     })
   )
 }
 
 
+// creates a Babel object expression from a Javascript object with string keys
 function toObjectExpression (obj, {types: t, template}) {
   const properties = []
 
@@ -53,12 +57,19 @@ function toObjectExpression (obj, {types: t, template}) {
 }
 
 
-const absolutePkg = /^[.\/]/g
-
+// relative packages are considered as such when they start with a period '.'
+const relativePkg = /^\./g
+// Parses the lazy() macro arguments to determine their type. String literals
+// are converted to require.ensure code-split imports. Arrow functions,
+// Identifers, and plain Functions, are all excluded from code-splitting and
+// are interpreted as-is.
 function parseArguments (args, state, babel) {
   const {file: {opts: {filename}}} = state
   const {types: t, template} = babel
-  const esureTemplate = babel.template(`
+  // since I can't add magic comments for Webpack with dynamic imports in babel
+  // yet, I had to revert to using the Webpack's legacy code-splitting API
+  // using require.ensure
+  const ensureTemplate = babel.template(`
     new Promise(
       function (resolve) {
         return require.ensure(
@@ -76,41 +87,45 @@ function parseArguments (args, state, babel) {
   for (let arg of args) {
     switch (arg.type) {
       case 'StringLiteral':
-        // Imports
+        // string literals are interpreted as module paths that need to be
+        // imported and code-split
         const node = arg.node !== void 0 ? arg.node : arg
+        // if the package source isn't relative it is interpreted as-is,
+        // otherwise it is joined to the path of the filename being parsed by
+        // Babel
         source =
-          node.value.match(absolutePkg) === null
+          node.value.match(relativePkg) === null
             ? node.value
             : path.join(path.dirname(filename), node.value)
         chunkName = chunkNameCache.get(source)
-
+        // duplicate imports are not allowed
         if (promises[chunkName] !== void 0) {
           throw new Error(`[Broker Error] duplicate import: ${source}`)
         }
-
+        // creates a function that returns the import promise
         promises[chunkName] = t.arrowFunctionExpression(
           [],
-          esureTemplate({
+          ensureTemplate({
             SOURCE: t.stringLiteral(source),
             CHUNK_NAME: chunkName
           }).expression
         )
       break;
       case 'ArrayExpression':
-        const arrPromises = parseArguments(arg.node.elements, state, babel)
-        Object.assign(promises, arrPromises)
+        Object.assign(promises, parseArguments(arg.node.elements, state, babel))
       break;
       case 'Identifier':
       case 'FunctionExpression':
       case 'ArrowFunctionExpression':
-        // Functions which return promises
+        // Functions and identifiers are interpreted as Promise-returning
+        // functions. They are no implicitly code-split by Broker but
+        // may be code-split if you do something like () => import('../Foo')
         source = state.file.code.slice(arg.start, arg.end)
-        chunkName = chunkNameCache.get(source, true)
-
-        if (promises[chunkName] !== void 0) {
-          throw new Error(`[Broker Error] duplicate promise: ${source}`)
-        }
-
+        // chunk names are assigned for ease-of-use with the Lazy component
+        chunkName = chunkNameCache.get(
+          `${filename}${source}[${arg.start}:${arg.end}]`,
+          true
+        )
         promises[chunkName] = arg
       break;
       /**
@@ -122,7 +137,7 @@ function parseArguments (args, state, babel) {
       break;
       */
       default:
-        throw new Error('[Broker Error] Unrecognized argument type:', arg.type)
+        throw new Error(`[Broker Error] Unrecognized argument type: ${arg.type}`)
     }
   }
 
@@ -130,39 +145,31 @@ function parseArguments (args, state, babel) {
 }
 
 
+// shortens the chunk name to its parent directory basename and its basename
 function getShortChunkName (source) {
   return path.basename(path.dirname(source)) + '/' + path.basename(source)
 }
-
-function getObjChunkName (source) {
-  const hash = crypto.createHash('sha1')
-  hash.update(source)
-  return hash.digest('hex')
-}
-
+// This is the chunk name cache which maps sources to their respective
+// chunk names. This is necessary because you could import the same module
+// from different paths, but you obviously want to use the same chunk rather
+// than create two separate chunks in Webpack.
 class ChunkNameCache {
   chunks = {}
   chunkNames = new Set()
 
   get (source, isFunction = false) {
-    let name
-
-    if (isFunction === false) {
-      name = getShortChunkName(source)
-    }
-    else {
-      name = getObjChunkName(source)
-    }
-
     if (this.chunks[source]) {
       return this.chunks[source]
     }
 
+    let name = name = getShortChunkName(source)
     let originalName = name
     let i = 0
 
     while (true) {
       if (this.chunkNames.has(name)) {
+        // if this chunk name is already in use by a different source then we
+        // append a unique ID to it
         name = `${originalName}.${i}`
         i++
       }
@@ -180,6 +187,9 @@ class ChunkNameCache {
 
 const chunkNameCache = new ChunkNameCache()
 /*
+Dynamic imports will be used once Babel adds the option to add magic comments
+without a babel.template()
+
 function makeDynamicImport ({references, state, babel, referencePath}) {
   const tpl = impTemplate({
     IMPORT: t.arrowFunctionExpression(

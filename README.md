@@ -14,7 +14,7 @@ const LazyPage = lazy('../pages/Page', {loading: () => 'Loading...'})
 ////////////////////////////////////////////////////////////////////////////////
 //                               ⬇ BECOMES ⬇                                //
 ///////////////////////////////////////////////////////////////////////////////
-const LazyPage = require('react-broker/lazy').default(
+const LazyPage = require('react-broker').default(
   new Promise(function (resolve) {
     return require.ensure(
       [],

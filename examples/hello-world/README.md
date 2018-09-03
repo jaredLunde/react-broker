@@ -1,2 +1,2 @@
 # Hello World 🌎
-The most basic of basic `react-broker` powered app
+The most basic of basic `react-broker` powered apps
