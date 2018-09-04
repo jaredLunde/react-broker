@@ -45,8 +45,9 @@ const LazyPage =
 
 
 ### Examples
-#### [Hello world](examples/hello-world)
-#### [Hello world w/ Router](examples/hello-world-router)
+**[Hello world](examples/hello-world)**<br/>
+**[Hello world w/ Router](examples/hello-world-router)**
+
 --------------------------------------------------------------------------------
 
 ## Documentation
