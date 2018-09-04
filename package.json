@@ -1,6 +1,6 @@
 {
   "name": "react-broker",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "description": "Component lazy-loading + code splitting that works with SSR, Webpack 4, and Babel 7",
   "main": "cjs/index.js",
   "repository": "https://github.com/jaredLunde/react-broker",
@@ -37,7 +37,7 @@
     "prettier:cjs": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"cjs/**/*.js\"",
     "prettier-macro": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"macro/**/*.js\""
   },
-  "tags": [
+  "keywords": [
     "react",
     "async component",
     "universal app",
