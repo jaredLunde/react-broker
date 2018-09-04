@@ -118,7 +118,8 @@ export class LazyProvider extends React.Component {
       // tells subscribed components that we've started loading this chunk
       promise  = promise.then(component => this.resolved(chunkName, component))
                         .catch(err => this.rejected(chunkName, err))
-      this.chunkCache.set(chunkName, {...chunk, promise, status: LOADING})
+      chunk.promise = promise
+      chunk.status = LOADING
       chunk.lazy.forEach(c => c.resolving(chunkName))
     }
 
@@ -142,7 +143,7 @@ export class LazyProvider extends React.Component {
       chunk.lazy.forEach(c => c.resolved(chunkName, chunk.component))
     }
 
-    return component
+    return chunk.component
   }
 
   rejected = (chunkName, err) => {
@@ -331,7 +332,7 @@ export default function lazy (promises, opt = defaultOpt) {
   }
 
   // necessary for calling Component.load from the application code
-  LazyConsumer.load = () => 
+  LazyConsumer.load = () =>
     Promise.all(Object.values(promises).map(p => p()))
 
   // <Lazy(pages/Home)> makes visual grep'ing easier in react-dev-tools

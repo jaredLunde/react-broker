@@ -1,18 +1,19 @@
 import React from 'react'
 import Broker from 'react-broker'
 import lazy from 'react-broker/macro'
-const Emojify = lazy(
-  'react-emojione',
-  {
-    loading: (props, broker) => <span style={{
-      width: 24,
-      height: 24,
-      backgroundColor: '#ccc',
-      borderRadius: 12,
-      ...props.style
-    }}/>
-  }
-)
+
+
+const lazyOptions = {
+  loading: (props, broker) => <span style={{
+    width: 24,
+    height: 24,
+    backgroundColor: '#ccc',
+    borderRadius: 12,
+    ...props.style
+  }}/>
+}
+
+const Emojify = lazy('react-emojione', lazyOptions)
 
 
 export default class App extends React.PureComponent {

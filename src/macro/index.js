@@ -39,7 +39,7 @@ function makeLegacyEnsure ({references, state, babel, referencePath}) {
   referencePath.parentPath.replaceWith(
     brokerTemplate({
       PROMISES: toObjectExpression(promises, babel),
-      OPTIONS: toObjectExpression(options, babel)
+      OPTIONS: options
     })
   )
 }
@@ -82,7 +82,11 @@ function parseArguments (args, state, babel) {
   `)
   let chunkName, source
   const promises = {}
-  const options = {}
+  const options =
+    args.length > 1 && args[args.length - 1].type !== 'StringLiteral'
+      ? args[args.length - 1].node
+      : void 0
+  args = options === void 0 ? args : args.slice(0, -1)
 
   for (let arg of args) {
     switch (arg.type) {
@@ -113,7 +117,6 @@ function parseArguments (args, state, babel) {
         )
       break;
       /**
-      case 'Identifier':
       case 'FunctionExpression':
       case 'ArrowFunctionExpression':
         // Functions and identifiers are interpreted as Promise-returning
@@ -128,13 +131,13 @@ function parseArguments (args, state, babel) {
         )
         promises[chunkName] = arg.node
       break;
-      */
       case 'ObjectExpression':
         // Lazy options
         for (let property of arg.node.properties) {
           options[property.key.name] = property.value
         }
       break;
+      */
       default:
         throw new Error(`[Broker Error] Unrecognized argument type: ${arg.type}`)
     }

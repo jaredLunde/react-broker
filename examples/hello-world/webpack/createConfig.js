@@ -51,7 +51,7 @@ module.exports = function createConfig (...configs) {
             use: {
               loader: 'babel',
               options: {
-                cacheDirectory: true,
+                cacheDirectory: false,
                 presets: [
                   [
                     '@inst-app/esx', {
