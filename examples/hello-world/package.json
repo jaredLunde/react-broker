@@ -1,0 +1,33 @@
+{
+  "name": "react-broker-hello-world",
+  "version": "1.0.0",
+  "repository": "https://github.com/jaredLunde/react-broker",
+  "author": "Jared Lunde",
+  "license": "MIT",
+  "private": false,
+  "devDependencies": {
+    "@inst-app/babel-preset-esx": "^1.0.0",
+    "@inst-app/babel-preset-react": "^1.0.0",
+    "@inst-app/webpack-deps": "^1.0.1",
+    "babel-plugin-macros": "^2.4.0",
+    "compression-webpack-plugin": "^1.1.12",
+    "cross-env": "^5.2.0",
+    "prettier": "^1.14.2",
+    "rimraf": "^2.6.2"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.0.0",
+    "@babel/runtime-corejs2": "^7.0.0",
+    "chalk": "^2.4.1",
+    "compression": "^1.7.3",
+    "express": "^4.16.3",
+    "express-no-favicons": "^0.0.1",
+    "react": "^16.4.2",
+    "react-dom": "^16.4.2",
+    "react-emojione": "^5.0.0"
+  },
+  "scripts": {
+    "start": "cross-env NODE_ENV=development BABEL_ENV=development node src/server/bin",
+    "start:prod": "cross-env NODE_ENV=production BABEL_ENV=production node src/server/bin"
+  }
+}

@@ -2,7 +2,7 @@ import path from 'path'
 import {createMacro} from 'babel-plugin-macros'
 
 
-const pkgName = 'react-broker/macro'
+const pkgName = 'react-broker'
 export default createMacro(evaluateMacros)
 
 // cycles through each call to the macro and determines an output for each

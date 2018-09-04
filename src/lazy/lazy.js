@@ -65,8 +65,8 @@ export class LazyProvider extends React.Component {
 
   getStatus = chunkName => {
     // gets the cached status of a given chunk name
-    const meta = this.chunkCache.get(chunkName)
-    return meta === void 0 ? LOADING : meta.status
+    const chunk = this.chunkCache.get(chunkName)
+    return chunk === void 0 ? LOADING : chunk.status
   }
 
   getComponent = chunkName => {
@@ -142,18 +142,18 @@ export class LazyProvider extends React.Component {
   resolved = (chunkName, component) => {
     // updates a chunk's consumers when the chunk is resolved and sets the
     // chunk status to 'RESOLVED'
-    const meta = this.chunkCache.get(chunkName)
+    const chunk = this.chunkCache.get(chunkName)
 
-    if (meta.status !== RESOLVED) {
-      meta.status = RESOLVED
+    if (chunk.status !== RESOLVED) {
+      chunk.status = RESOLVED
       // modules typically resolve with a 'default' attribute, but some don't.
       // likewise, fetch() never resolves with a 'default' attribute.
-      meta.component =
+      chunk.component =
         component && component.default !== void 0
           ? component.default
           : component
       // updates each chunk listener with the resolved component
-      meta.lazy.forEach(c => c.resolved(chunkName, meta.component))
+      chunk.lazy.forEach(c => c.resolved(chunkName, chunk.component))
     }
 
     return component
@@ -162,12 +162,12 @@ export class LazyProvider extends React.Component {
   rejected = (chunkName, err) => {
     // updates a chunk's consumers when the chunk is rejected and sets the
     // chunk status to 'REJECTED'
-    const meta = this.chunkCache.get(chunkName)
+    const chunk = this.chunkCache.get(chunkName)
 
-    if (meta.status !== REJECTED) {
-      meta.status = REJECTED
+    if (chunk.status !== REJECTED) {
+      chunk.status = REJECTED
       // updates each chunk listener with the caught error
-      meta.lazy.forEach(c => c.rejected(chunkName, err))
+      chunk.lazy.forEach(c => c.rejected(chunkName, err))
     }
 
     return err
