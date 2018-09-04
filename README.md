@@ -132,7 +132,7 @@ Returns a `Set` of all the Webpack chunks loaded into the current app.
 Returns a `string` representation of all the `<script>` tags to include in the
 output of your app when using with SSR.
 
-#### See the [SSR section](#server/render.js) for an example
+#### See the [SSR section](#serverrenderjs) for an example
 
 --------------------------------------------------------------------------------
 
@@ -177,7 +177,7 @@ Broker.load(LazyA, LazyB).then(/*...*/)
 Preloads all of the components in your app. This is used on the server-side and
 in the pre-render phase of the client.
 
-#### See the [SSR section](#client/render.js) for an example
+#### See the [SSR section](#clientrenderjs) for an example
 
 --------------------------------------------------------------------------------
 
