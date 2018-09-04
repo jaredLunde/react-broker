@@ -45,8 +45,8 @@ const LazyPage =
 
 
 ### Examples
-- [Hello world](tree/master/examples/hello-world)
-- [Hello world w/ Router](tree/master/examples/hello-world-router)
+#### [Hello world](examples/hello-world)
+#### [Hello world w/ Router](examples/hello-world-router)
 --------------------------------------------------------------------------------
 
 ## Documentation
@@ -73,11 +73,14 @@ const LazyPage = lazy('./pages/Home', {loading: props => 'Loading ${props.id}...
 // Used similarly to the render props pattern
 const LazyPages = lazy('./pages/Home', './ui/UserList')
 <LazyPages>
-  {(Home, UserList, lazy) => lazy.isLoading ? 'Loading...' : (
-    <Home>
-      <UserList users={users}/>
-    </Home>
-  )}
+  {(Home, UserList, {isLoading, isDone, isError, status, error}) =>
+    isLoading
+      ? 'Loading...'
+      : (
+          <Home>
+            <UserList users={users}/>
+          </Home>
+        )}
 </LazyPages>
 ```
 
@@ -100,7 +103,7 @@ which `<scripts>` need to be included from the server-side. `Broker.Provider`
 must be defined at the top-level of your lazy loaded components.
 
 #### Props
-##### `chunkCache <Broker.createChunkCache>`
+##### chunkCache `{Broker.createChunkCache}`
 ```js
 import Broker from 'react-broker'
 

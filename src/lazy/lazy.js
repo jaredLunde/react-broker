@@ -209,7 +209,7 @@ export default function lazy (promises, opt = defaultOpt) {
         this.multiContext = {
           retry: this.load,
           isLoading: null,
-          isFailed: null,
+          isError: null,
           isDone: null,
           status: emptyArr,
           error: emptyArr
@@ -314,7 +314,7 @@ export default function lazy (promises, opt = defaultOpt) {
         this.multiContext.error = Object.values(error)
         status = Math.min(...Object.values(status))
         this.multiContext.isLoading = status === WAITING || status === LOADING
-        this.multiContext.isFailed = status === REJECTED
+        this.multiContext.isError = status === REJECTED
         this.multiContext.isDone = status === RESOLVED
 
         return this.props.children(...Object.values(component), this.multiContext)
