@@ -14,13 +14,13 @@ module.exports = function createConfig (...configs) {
 
   const mainFields =
     target === 'web'
-    ? ['browser', 'module', 'jsnext', 'esnext', 'jsnext:main', 'main']
-    : ['module', 'jsnext', 'esnext', 'jsnext:main', 'main']
+    ? ['browser', 'jsnext', 'esnext', 'jsnext:main', 'main']
+    : ['jsnext', 'esnext', 'jsnext:main', 'main']
 
   return merge.smartStrategy({'module.rules': 'prepend'})(
     {
       devtool: 'eval',
-      target: target === 'lambda' ? 'node' : target,
+      target,
 
       // The base directory for resolving the entry option
       output: {
@@ -47,7 +47,7 @@ module.exports = function createConfig (...configs) {
       module: {
         rules: [
           {
-            test: /(\.js|\.mjs)$/,
+            test: /(\.js)$/,
             use: {
               loader: 'babel',
               options: {

@@ -1,5 +1,5 @@
 {
-  "name": "react-broker-hello-world",
+  "name": "react-broker-hello-world-router",
   "version": "1.0.0",
   "repository": "https://github.com/jaredLunde/react-broker",
   "author": "Jared Lunde",
@@ -22,7 +22,7 @@
     "express-no-favicons": "^0.0.1",
     "react": "^16.4.2",
     "react-dom": "^16.4.2",
-    "react-emojione": "^5.0.0"
+    "react-router-dom": "^4.3.1"
   },
   "scripts": {
     "start": "rimraf dist && cross-env NODE_ENV=development BABEL_ENV=development node src/server/bin",

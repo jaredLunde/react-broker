@@ -1,4 +1,4 @@
-const createConfig = require('../createConfig')
+const createConfig = require('../../../hello-world/webpack/createConfig')
 const path = require('path')
 const webpack = require('webpack')
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin')

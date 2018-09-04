@@ -25,21 +25,21 @@ function makeLegacyEnsure ({references, state, babel, referencePath}) {
     )
   `)
 
-  const promises = parseArguments(
-    referencePath.parentPath.get('arguments')[0],
+  const {promises, options} = parseArguments(
+    referencePath.parentPath.get('arguments'),
     state,
     babel
   )
 
   // component options are always in the second argument
-  let options = referencePath.parentPath.get('arguments')[1]
-  options = options && options.expression
+  // let options = referencePath.parentPath.get('arguments')[1]
+  // options = options && options.expression
 
   // replaces the macro with the new broker template in the source code
   referencePath.parentPath.replaceWith(
     brokerTemplate({
       PROMISES: toObjectExpression(promises, babel),
-      OPTIONS: options
+      OPTIONS: toObjectExpression(options, babel)
     })
   )
 }
@@ -82,21 +82,22 @@ function parseArguments (args, state, babel) {
   `)
   let chunkName, source
   const promises = {}
-  args = Array.isArray(args) ? args : [args]
+  const options = {}
 
   for (let arg of args) {
     switch (arg.type) {
       case 'StringLiteral':
         // string literals are interpreted as module paths that need to be
         // imported and code-split
-        const node = arg.node !== void 0 ? arg.node : arg
+        // const node = arg.node !== void 0 ? arg.node : arg
+        const {value} = arg.node
         // if the package source isn't relative it is interpreted as-is,
         // otherwise it is joined to the path of the filename being parsed by
         // Babel
         source =
-          node.value.match(relativePkg) === null
-            ? node.value
-            : path.join(path.dirname(filename), node.value)
+          value.match(relativePkg) === null
+            ? value
+            : path.join(path.dirname(filename), value)
         chunkName = chunkNameCache.get(source)
         // duplicate imports are not allowed
         if (promises[chunkName] !== void 0) {
@@ -111,37 +112,35 @@ function parseArguments (args, state, babel) {
           }).expression
         )
       break;
-      case 'ArrayExpression':
-        Object.assign(promises, parseArguments(arg.node.elements, state, babel))
-      break;
+      /**
       case 'Identifier':
       case 'FunctionExpression':
       case 'ArrowFunctionExpression':
         // Functions and identifiers are interpreted as Promise-returning
         // functions. They are no implicitly code-split by Broker but
         // may be code-split if you do something like () => import('../Foo')
-        source = state.file.code.slice(arg.start, arg.end)
+        const {start, end} = arg.node
+        source = state.file.code.slice(start, end)
         // chunk names are assigned for ease-of-use with the Lazy component
         chunkName = chunkNameCache.get(
-          `${filename}${source}[${arg.start}:${arg.end}]`,
+          `${filename}${source}[${start}:${end}]`,
           true
         )
-        promises[chunkName] = arg
+        promises[chunkName] = arg.node
       break;
-      /**
+      */
       case 'ObjectExpression':
         // Lazy options
         for (let property of arg.node.properties) {
           options[property.key.name] = property.value
         }
       break;
-      */
       default:
         throw new Error(`[Broker Error] Unrecognized argument type: ${arg.type}`)
     }
   }
 
-  return promises
+  return {promises, options}
 }
 
 

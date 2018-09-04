@@ -1,4 +1,4 @@
-const createConfig = require('../createConfig')
+const createConfig = require('../../../hello-world/webpack/createConfig')
 const webpack = require('webpack')
 const path = require('path')
 

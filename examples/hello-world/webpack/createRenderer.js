@@ -18,14 +18,13 @@ export default function createRenderer({
   const app = express()
   // applies any user-defined middleware
   middleware.forEach(mw => app.use(mw))
-
   // only needs one route
   app.get(
     '*',
     async (req, res, next) => {
       // keeps track of lazy chunks used by the current page
       const chunkCache = Broker.createChunkCache()
-      const app = <App chunkCache={chunkCache}/>
+      const app = <App chunkCache={chunkCache} location={req.url}/>
       // preloads the async components and when done renders the app string
       await Broker.loadAll(app)
       // renders the app to a string

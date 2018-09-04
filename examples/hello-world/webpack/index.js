@@ -1,5 +1,7 @@
 module.exports = {
+  client: require('./client'),
   createConfig: require('./createConfig'),
+  createRenderer: require('./createRenderer'),
   server: require('./server'),
-  client: require('./client')
+  startServer: require('./startServer'),
 }

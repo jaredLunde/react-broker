@@ -1,4 +1,4 @@
-import createRenderer from '../../webpack/createRenderer'
+import createRenderer from '../../../hello-world/webpack/createRenderer'
 import App from '../App'
 
 

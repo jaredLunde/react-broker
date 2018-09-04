@@ -20,6 +20,7 @@ export const createChunkCache = () => {
   const cache = {
     get: k => map[k],
     set: (k, v) => map[k] = v,
+    invalidate: k => delete map[k],
     // returns an array of chunk names used by the current react tree
     getChunkNames: () => Object.keys(map),
     // returns a Set of Webpack chunk objects used by the current react tree
@@ -33,13 +34,13 @@ export const createChunkCache = () => {
 }
 
 // loads an array of Lazy components
-export const load = instances => Promise.all(instances.map(i => i.load()))
+export const load = (...instances) => Promise.all(instances.map(i => i.load()))
 
 // this is the visitor used by react-tree-walker which will load all of the
 // async components required by the current react tree
 function loadAllVisitor (element, instance) {
   if (instance && instance.isLazyComponent === true) {
-    return instance.constructor.load()
+    return instance.load()
   }
 }
 
@@ -47,15 +48,16 @@ function loadAllVisitor (element, instance) {
 export const loadAll = app => reactTreeWalker(app, loadAllVisitor, emptyObj)
 
 
+const globalChunkCache = createChunkCache()
+
 export class LazyProvider extends React.Component {
   constructor (props) {
     super(props)
     // if there wasn't a chunkCache explicitly provided, one is created
-    this.chunkCache = props.chunkCache || createChunkCache()
+    this.chunkCache = props.chunkCache || globalChunkCache
     // this is the context that is provided to the LazyConsumers
     this.providerContext = {
       load: this.load,
-      reload: this.reload,
       subscribe: this.subscribe,
       unsubscribe: this.unsubscribe,
       getStatus: this.getStatus,
@@ -87,14 +89,14 @@ export class LazyProvider extends React.Component {
       // have with a plain Array
       const lazy = new CDLL([lazyComponent])
       this.chunkCache.set(chunkName, {status: WAITING, lazy})
-      return this.load(chunkName, lazyComponent.promises[chunkName])
+      return this.load(chunkName, lazyComponent.promises[chunkName]())
     }
     else {
       // this chunk is already being listened to so all we need to do is add
       // the consumer to the list of consumers that need to be updated
       // once the chunk's promise resolves
       chunk.lazy.push(lazyComponent)
-      return lazyComponent.promises[chunkName]
+      return chunk.promise
     }
   }
 
@@ -106,37 +108,21 @@ export class LazyProvider extends React.Component {
     element !== void 0 && chunk.lazy.delete(element)
   }
 
-  reload = (chunkName, promise) => {
-    // reloads a given chunk - this is necessary in cases where the underlying
-    // promise changes due to a prop change in the Lazy component
-    const chunk = this.chunkCache.get(chunkName)
-    this.chunkCache.set(chunkName, {...chunk, status: WAITING})
-    return this.load(chunkName, promise)
-  }
-
   load = (chunkName, promise) => {
     // loads a given chunk and updates its consumers when it is resolved or
     // rejected. also sets the chunk's status to 'LOADING' if it hasn't
     // already resolved
     const chunk = this.chunkCache.get(chunkName)
 
-    switch (chunk.status) {
-      case RESOLVED:
-        // return Promise.resolve(chunk.component)
-        return promise
-      // case LOADING is omitted here because we don't want to try loading
-      // chunks that are ALREADY loading
-      case REJECTED:
-      case WAITING:
-        this.chunkCache.set(chunkName, {...chunk, component: void 0, status: LOADING})
-        // tells subscribed components that we've started loading this chunk
-        chunk.lazy.forEach(c => c.resolving(chunkName))
-        return promise.then(component => this.resolved(chunkName, component))
-                      .catch(err => this.rejected(chunkName, err))
-
+    if (chunk.status === WAITING) {
+      // tells subscribed components that we've started loading this chunk
+      promise  = promise.then(component => this.resolved(chunkName, component))
+                        .catch(err => this.rejected(chunkName, err))
+      this.chunkCache.set(chunkName, {...chunk, promise, status: LOADING})
+      chunk.lazy.forEach(c => c.resolving(chunkName))
     }
 
-    return promise
+    return chunk.promise
   }
 
   resolved = (chunkName, component) => {
@@ -180,7 +166,7 @@ export class LazyProvider extends React.Component {
 }
 
 
-const defaultOpt = {loading: null, error: null, shouldBrokerUpdate: null}
+const defaultOpt = {loading: null, error: null}
 
 export default function lazy (promises, opt = defaultOpt) {
   const isMulti = Object.keys(promises).length > 1
@@ -194,32 +180,20 @@ export default function lazy (promises, opt = defaultOpt) {
     // since Promise isn't cancellable this is necessary for avoiding
     // 'update on unmounted component' errors in React
     mounted = false
+    unmounted = false
     // used by Broker.loadAll() for determining whether or not a load()
     // method should be called on a component in the react tree
     isLazyComponent = true
-
-    static defaultProps = {
-      // shouldBrokerUpdate() option in lazy() can be overridden here
-      shouldBrokerUpdate: opt.shouldBrokerUpdate
-    }
+    promises = promises
 
     constructor (props) {
       super(props)
-      this.promises = {}
       let status = {}, component = {}, error = {}
-      // duplicates props without the lazy context for calling promise
-      // arrow functions. I avoid Babel destructuring here because this way is
-      // much more performant than using Babel's loop.
-      props = Object.assign({}, props)
-      delete props.lazy
-      delete props.shouldBrokerUpdate
-      delete props.children
 
-      for (let chunkName in promises) {
+      for (let chunkName in this.promises) {
         // gets the initial status of the chunk in checking whether or not
         // its already been subscribed/resolved
         status[chunkName] = this.props.lazy.getStatus(chunkName)
-        this.promises[chunkName] = promises[chunkName](props)
 
         // subscribes the component to changes in the chunk's status
         this.props.lazy.subscribe(chunkName, this)
@@ -233,7 +207,7 @@ export default function lazy (promises, opt = defaultOpt) {
       // multi components need a multi context, singular components do not
       if (isMulti === true) {
         this.multiContext = {
-          retry: this.retry,
+          retry: this.load,
           isLoading: null,
           isFailed: null,
           isDone: null,
@@ -251,45 +225,9 @@ export default function lazy (promises, opt = defaultOpt) {
       this.mounted = true
     }
 
-    componentDidUpdate (prevProps) {
-      // in the event that this components props change you can optionally
-      // choose to reload the chunks with the new props. this is useful
-      // in situations where you have a fetch() that changes with each
-      // new page that is loaded/
-      const {shouldBrokerUpdate} = this.props
-
-      if (shouldBrokerUpdate !== null  && shouldBrokerUpdate !== void 0) {
-        // I avoid Babel destructuring here because this way is much more
-        // performant than using Babel's loop
-        prevProps = Object.assign({}, prevProps)
-        delete prevProps.lazy
-        delete prevProps.shouldBrokerUpdate
-        delete prevProps.children
-
-        const props = Object.assign({}, this.props)
-        delete props.lazy
-        delete props.shouldBrokerUpdate
-        delete props.children
-
-        if (shouldBrokerUpdate(prevProps, props) === true) {
-          this.promises = {}
-          let status = {}, component = {}, error = {}
-
-          for (let chunkName in promises) {
-            status[chunkName] = LOADING
-            component[chunkName] = null
-            error[chunkName] = null
-            this.promises[chunkName] = promises[chunkName](this.props)
-            this.props.lazy.reload(chunkName, this.promises[chunkName])
-          }
-
-          this.setState({status, component, error})
-        }
-      }
-    }
-
     componentWillUnmount () {
-      this.mounted = false
+      this.unmounted = true
+
       for (let chunkName in this.promises) {
         this.props.lazy.unsubscribe(chunkName, this)
       }
@@ -307,7 +245,7 @@ export default function lazy (promises, opt = defaultOpt) {
 
     // sets RESOLVED status for chunks that have been resolved
     resolved =
-      (chunkName, resolvedComponent) => this.mounted === true && this.setState(
+      (chunkName, resolvedComponent) => this.unmounted === false && this.setState(
         ({status, error, component}) => ({
           status: {...status, [chunkName]: RESOLVED},
           component: {...component, [chunkName]: resolvedComponent},
@@ -317,7 +255,7 @@ export default function lazy (promises, opt = defaultOpt) {
 
     // sets REJECTED status for chunks that have been rejected
     rejected =
-      (chunkName, error) => this.mounted === true && this.setState(
+      (chunkName, error) => this.unmounted === false && this.setState(
         ({status, error, component}) => ({
           status: {...status, [chunkName]: REJECTED},
           error: {...error, [chunkName]: error}
@@ -326,16 +264,9 @@ export default function lazy (promises, opt = defaultOpt) {
 
     // loads all of the chunks assigned to this component and passes any
     // defined props along to the promise wrapper
-    static load = (props = emptyObj) =>
-      Promise.all(Object.values(promises).map(p => p(props)))
-
-    // reloads all chunks
-    retry = () => Promise.all(
+    load = () => Promise.all(
       Object.keys(this.promises).map(
-        chunkName => {
-          this.promises[chunkName] = promises[chunkName](this.props)
-          this.props.lazy.reload(chunkName, this.promises[chunkName])
-        }
+        chunkName => this.props.lazy.load(chunkName, this)
       )
     )
 
@@ -345,7 +276,6 @@ export default function lazy (promises, opt = defaultOpt) {
       // performant than using Babel's loop
       let props = Object.assign({}, this.props)
       delete props.children
-      delete props.shouldBrokerUpdate
       delete props.lazy
 
       if (isMulti === false) {
@@ -356,7 +286,11 @@ export default function lazy (promises, opt = defaultOpt) {
           case WAITING:
           case LOADING:
             // returns 'loading' component
-            return opt.loading ? opt.loading(props, {retry: this.retry}) : null
+            return (
+              opt.loading
+                ? opt.loading(props, {retry: this.load, error:  null})
+                : null
+            )
           case REJECTED:
             // returns 'error' component
             error = error[this.chunkName]
@@ -364,7 +298,7 @@ export default function lazy (promises, opt = defaultOpt) {
             // 'loading' component will be used as a backup with the error
             // message passed in the second argument
             const render = opt.loading || opt.error
-            return render ? render(props, {retry: this.retry, error}) : null
+            return render ? render(props, {retry: this.load, error}) : null
           case RESOLVED:
             // returns the proper resolved component
             return React.createElement(component, props, this.props.children)
@@ -397,7 +331,8 @@ export default function lazy (promises, opt = defaultOpt) {
   }
 
   // necessary for calling Component.load from the application code
-  LazyConsumer.load = Lazy.load
+  LazyConsumer.load = () =>
+    Promise.all(Object.values(promises).map(p => p()))
 
   // <Lazy(pages/Home)> makes visual grep'ing easier in react-dev-tools
   if (__DEV__) {
