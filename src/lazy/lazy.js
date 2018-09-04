@@ -331,7 +331,7 @@ export default function lazy (promises, opt = defaultOpt) {
   }
 
   // necessary for calling Component.load from the application code
-  LazyConsumer.load = () =>
+  LazyConsumer.load = () => 
     Promise.all(Object.values(promises).map(p => p()))
 
   // <Lazy(pages/Home)> makes visual grep'ing easier in react-dev-tools
@@ -351,7 +351,7 @@ lazy.load = load
 lazy.loadAll = loadAll
 lazy.createChunkCache = createChunkCache
 lazy.Provider = LazyProvider
-lazy.WAITING = 0
-lazy.LOADING = 1
-lazy.REJECTED = 2
-lazy.RESOLVED = 3
+lazy.WAITING = WAITING
+lazy.LOADING = LOADING
+lazy.REJECTED = REJECTED
+lazy.RESOLVED = RESOLVED

@@ -19,7 +19,7 @@ module.exports = function createConfig (...configs) {
 
   return merge.smartStrategy({'module.rules': 'prepend'})(
     {
-      devtool: 'eval',
+      devtool: process.env.NODE_ENV !== 'production' ? 'eval' : false,
       target,
 
       // The base directory for resolving the entry option
@@ -65,6 +65,7 @@ module.exports = function createConfig (...configs) {
                   ],
                   '@inst-app/react',
                 ],
+                comments: process.env.NODE_ENV === 'development',
                 plugins: ['macros']
               }
             },
