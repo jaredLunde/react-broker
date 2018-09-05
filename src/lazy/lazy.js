@@ -15,7 +15,7 @@ export const REJECTED = 2 // promise was rejected
 export const RESOLVED = 3 // promise was successfully resolved
 
 // tracks the chunks used in the rendering of a tree
-export const createChunkCache = () => {
+export function createChunkCache () {
   const map = {}
   const cache = {
     get: k => map[k],
@@ -34,7 +34,9 @@ export const createChunkCache = () => {
 }
 
 // loads an array of Lazy components
-export const load = (...instances) => Promise.all(instances.map(i => i.load()))
+export function load (...instances) {
+  return Promise.all(instances.map(i => i.load()))
+}
 
 // this is the visitor used by react-tree-walker which will load all of the
 // async components required by the current react tree
@@ -45,7 +47,9 @@ function loadAllVisitor (element, instance) {
 }
 
 // preloads all of the async components used in the current react tree
-export const loadAll = app => reactTreeWalker(app, loadAllVisitor, emptyObj)
+export function loadAll (app, visitor = loadAllVisitor, context = emptyObj) {
+  return reactTreeWalker(app, visitor, context)
+}
 
 
 const globalChunkCache = createChunkCache()
@@ -68,7 +72,7 @@ export class LazyProvider extends React.Component {
   getStatus = chunkName => {
     // gets the cached status of a given chunk name
     const chunk = this.chunkCache.get(chunkName)
-    return chunk === void 0 ? LOADING : chunk.status
+    return chunk === void 0 ? WAITING : chunk.status
   }
 
   getComponent = chunkName => {
@@ -116,9 +120,10 @@ export class LazyProvider extends React.Component {
 
     if (chunk.status === WAITING) {
       // tells subscribed components that we've started loading this chunk
-      promise  = promise.then(component => this.resolved(chunkName, component))
-                        .catch(err => this.rejected(chunkName, err))
-      chunk.promise = promise
+      chunk.promise =
+        promise
+          .then(component => this.resolved(chunkName, component))
+          .catch(err => this.rejected(chunkName, err))
       chunk.status = LOADING
       chunk.lazy.forEach(c => c.resolving(chunkName))
     }
@@ -192,13 +197,11 @@ export default function lazy (promises, opt = defaultOpt) {
       let status = {}, component = {}, error = {}
 
       for (let chunkName in this.promises) {
+        // subscribes the component to changes in the chunk's status
+        this.props.lazy.subscribe(chunkName, this)
         // gets the initial status of the chunk in checking whether or not
         // its already been subscribed/resolved
         status[chunkName] = this.props.lazy.getStatus(chunkName)
-
-        // subscribes the component to changes in the chunk's status
-        this.props.lazy.subscribe(chunkName, this)
-
         // retrieves the initial component if there is one for this chunk
         component[chunkName] = this.props.lazy.getComponent(chunkName)
         error[chunkName] = null
@@ -209,9 +212,9 @@ export default function lazy (promises, opt = defaultOpt) {
       if (isMulti === true) {
         this.multiContext = {
           retry: this.load,
-          isLoading: null,
-          isError: null,
-          isDone: null,
+          isLoading: false,
+          isError: false,
+          isDone: false,
           status: emptyArr,
           error: emptyArr
         }
