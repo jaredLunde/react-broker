@@ -1,8 +1,8 @@
 ![Wolf of Wall Street gif](https://media.giphy.com/media/8Q31McooUHTNu/giphy.gif)
 # `react-broker`
 
-Asynchronous components for React 16.3+ perfect for code splitting and the
-simplest SSR story you've ever seen out-of-the-box.
+A lightweight ([~5.2kB gzipped](https://bundlephobia.com/result?p=react-broker@1.0.0)) library for lazy components using React 16.3+. It's perfect for 
+code splitting and has the simplest SSR story you've ever seen out-of-the-box.
 
 Critically, this package is only intended to work with Webpack, specifically
 Webpack 4 and future versions. There are no plans to implement a design
