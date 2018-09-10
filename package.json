@@ -1,6 +1,6 @@
 {
   "name": "react-broker",
-  "version": "1.0.0-beta.4",
+  "version": "1.0.0",
   "description": "Component lazy-loading + code splitting that works with SSR, Webpack 4, and Babel 7",
   "main": "cjs/index.js",
   "module": "es/index.js",
@@ -35,7 +35,7 @@
     "build-lazy:es": "rimraf es && cross-env NODE_ENV=production cross-env BABEL_ENV=es babel src/lazy --out-dir es && npm run prettier:es",
     "build-lazy:cjs": "rimraf cjs && cross-env NODE_ENV=production cross-env BABEL_ENV=cjs babel src/lazy --out-dir cjs && npm run prettier:cjs",
     "build-macro": "rimraf macro && cross-env NODE_ENV=production cross-env BABEL_ENV=cjs babel src/macro --out-dir macro && npm run prettier-macro",
-    "watch": "cross-env NODE_ENV=development cross-env BABEL_ENV=es babel ./src -w --out-dir es",
+    "watch": "rimraf es && cross-env NODE_ENV=development cross-env BABEL_ENV=es babel ./src/lazy -w --out-dir es",
     "prettier:es": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"es/**/*.js\"",
     "prettier:cjs": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"cjs/**/*.js\"",
     "prettier-macro": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"macro/**/*.js\""
