@@ -44,9 +44,7 @@ export default function createRenderer({
           ${chunkCache.getChunkScripts(clientStats)}
         </head>
         <body>
-          <div id="⚛️">
-            ${page}
-          </div>
+          <div id="⚛️">${page}</div>
         </body>
         </html>
       `)

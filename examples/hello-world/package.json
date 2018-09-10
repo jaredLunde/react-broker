@@ -22,7 +22,7 @@
     "express-no-favicons": "^0.0.1",
     "react": "^16.4.2",
     "react-dom": "^16.4.2",
-    "react-emojione": "^5.0.0"
+    "react-emoji-component": "^4.0.0"
   },
   "scripts": {
     "start": "rimraf dist && cross-env NODE_ENV=development BABEL_ENV=development node src/server/bin",

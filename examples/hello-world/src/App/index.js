@@ -13,7 +13,7 @@ const lazyOptions = {
   }}/>
 }
 
-const Emojify = lazy('react-emojione', lazyOptions)
+const Emojis = lazy('react-emoji-component', lazyOptions)
 
 
 export default class App extends React.PureComponent {
@@ -22,9 +22,17 @@ export default class App extends React.PureComponent {
 
     return (
       <Broker.Provider chunkCache={chunkCache}>
-        <Emojify style={{width: 48, height: 48}}>
-          🌎 Hello 🌍 world 🌏
-        </Emojify>
+        <div style={{textAlign: 'center', width: '100%'}}>
+          <Emojis size={64}>
+            <div>
+              🌏
+            </div>
+          </Emojis>
+          
+          <Emojis size={16}>
+            🌎 Hello 🌍 world 🌏
+          </Emojis>
+        </div>
       </Broker.Provider>
     )
   }

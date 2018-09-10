@@ -100,6 +100,14 @@ export class LazyProvider extends React.Component {
       // the consumer to the list of consumers that need to be updated
       // once the chunk's promise resolves
       chunk.lazy.push(lazyComponent)
+
+      // this is here because the caching layer doesn't play nicely with HMR...
+      // it's just too damn efficient ;-)
+      if (__DEV__) {
+        chunk.status = WAITING
+        return this.load(chunkName, lazyComponent.promises[chunkName]())
+      }
+
       return chunk.promise
     }
   }
