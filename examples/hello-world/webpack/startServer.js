@@ -78,7 +78,6 @@ module.exports = function startServer ({
     // additional compiler options
     let options = {
       publicPath,
-      hot: true,
       compress: true,
       historyApiFallback: true,
       serverSideRender: true,

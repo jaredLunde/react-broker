@@ -28,7 +28,7 @@ export default class App extends React.PureComponent {
               🌏
             </div>
           </Emojis>
-          
+
           <Emojis size={16}>
             🌎 Hello 🌍 world 🌏
           </Emojis>
