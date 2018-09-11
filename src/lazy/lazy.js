@@ -16,10 +16,11 @@ export const RESOLVED = 3 // promise was successfully resolved
 
 // tracks the chunks used in the rendering of a tree
 export function createChunkCache () {
-  const map = {}
+  let map = {}
   const cache = {
     get: k => map[k],
     set: (k, v) => map[k] = v,
+    clear: () => map = {},
     invalidate: k => delete map[k],
     // returns an array of chunk names used by the current react tree
     getChunkNames: () => Object.keys(map),
@@ -67,6 +68,14 @@ export class LazyProvider extends React.Component {
       getStatus: this.getStatus,
       getComponent: this.getComponent
     }
+    // this clears the chunk cache when HMR disposes of a module
+    if (__DEV__) {
+      if (typeof module !== 'undefined' && module.hot) {
+        module.hot.addStatusHandler(
+          status => status === 'dispose' && this.chunkCache.clear()
+        )
+      }
+    }
   }
 
   getStatus = chunkName => {
@@ -100,14 +109,6 @@ export class LazyProvider extends React.Component {
       // the consumer to the list of consumers that need to be updated
       // once the chunk's promise resolves
       chunk.lazy.push(lazyComponent)
-
-      // this is here because the caching layer doesn't play nicely with HMR...
-      // it's just too damn efficient ;-)
-      if (__DEV__) {
-        chunk.status = WAITING
-        return this.load(chunkName, lazyComponent.promises[chunkName]())
-      }
-
       return chunk.promise
     }
   }
