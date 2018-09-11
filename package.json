@@ -1,6 +1,6 @@
 {
   "name": "react-broker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Component lazy-loading + code splitting that works with SSR, Webpack 4, and Babel 7",
   "main": "cjs/index.js",
   "module": "es/index.js",
@@ -11,7 +11,7 @@
   "license": "MIT",
   "private": false,
   "devDependencies": {
-    "@inst-app/babel-preset-esx": "^1.0.0",
+    "@inst-app/babel-preset-esx": "^1.0.2",
     "@inst-app/babel-preset-react": "^1.0.0",
     "prettier": "^1.14.2",
     "rimraf": "^2.6.2"
@@ -24,7 +24,6 @@
     "react-tree-walker": "^4.3.0"
   },
   "peerDependencies": {
-    "prop-types": ">= 15.6.0",
     "react": ">= 16.3.0",
     "react-dom": ">= 16.3.0"
   },
@@ -32,10 +31,10 @@
     "build": "npm run build:es && npm run build:cjs",
     "build:es": "npm run build-lazy:es",
     "build:cjs": "npm run build-lazy:cjs && npm run build-macro",
-    "build-lazy:es": "rimraf es && cross-env NODE_ENV=production cross-env BABEL_ENV=es babel src/lazy --out-dir es && npm run prettier:es",
-    "build-lazy:cjs": "rimraf cjs && cross-env NODE_ENV=production cross-env BABEL_ENV=cjs babel src/lazy --out-dir cjs && npm run prettier:cjs",
-    "build-macro": "rimraf macro && cross-env NODE_ENV=production cross-env BABEL_ENV=cjs babel src/macro --out-dir macro && npm run prettier-macro",
-    "watch": "rimraf es && cross-env NODE_ENV=development cross-env BABEL_ENV=es babel ./src/lazy -w --out-dir es",
+    "build-lazy:es": "rimraf es && cross-env NODE_ENV=production BABEL_ENV=es babel src/lazy --out-dir es && npm run prettier:es",
+    "build-lazy:cjs": "rimraf cjs && cross-env NODE_ENV=production BABEL_ENV=cjs babel src/lazy --out-dir cjs && npm run prettier:cjs",
+    "build-macro": "rimraf macro && cross-env NODE_ENV=production BABEL_ENV=cjs babel src/macro --out-dir macro && npm run prettier-macro",
+    "watch": "rimraf es && cross-env NODE_ENV=development BABEL_ENV=es babel ./src/lazy -w --out-dir es",
     "prettier:es": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"es/**/*.js\"",
     "prettier:cjs": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"cjs/**/*.js\"",
     "prettier-macro": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"macro/**/*.js\""
