@@ -20,8 +20,8 @@
     "compression": "^1.7.3",
     "express": "^4.16.3",
     "express-no-favicons": "^0.0.1",
-    "react": "^16.4.2",
-    "react-dom": "^16.4.2",
+    "react": "^16.5.0",
+    "react-dom": "^16.5.0",
     "react-emoji-component": "^4.0.0"
   },
   "scripts": {
