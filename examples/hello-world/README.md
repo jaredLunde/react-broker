@@ -5,6 +5,7 @@ The most basic of basic `react-broker` powered apps
 git clone https://github.com/jaredLunde/react-broker
 cd react-broker
 yarn install
+yarn build
 yarn link
 
 cd examples/hello-world
