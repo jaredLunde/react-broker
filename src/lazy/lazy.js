@@ -20,7 +20,6 @@ export function createChunkCache () {
   const cache = {
     get: k => map[k],
     set: (k, v) => map[k] = v,
-    clear: () => map = {},
     invalidate: k => delete map[k],
     // returns an array of chunk names used by the current react tree
     getChunkNames: () => Object.keys(map),
@@ -29,6 +28,10 @@ export function createChunkCache () {
     // returns a string of <script> tags for Webpack chunks used by the
     // current react tree
     getChunkScripts: stats => getChunkScripts(stats, cache.getChunks(stats))
+  }
+
+  if (__DEV__) {
+    cache.forEach = fn => Object.keys(map).forEach(k => fn(k, map[k]))
   }
 
   return cache
@@ -68,13 +71,31 @@ export class LazyProvider extends React.Component {
       getStatus: this.getStatus,
       getComponent: this.getComponent
     }
+  }
+
+  componentDidMount () {
     // this clears the chunk cache when HMR disposes of a module
     if (__DEV__) {
       if (typeof module !== 'undefined' && module.hot) {
-        module.hot.addStatusHandler(
-          status => status === 'dispose' && this.chunkCache.clear()
-        )
+        this.invalidateChunks =
+          status => status === 'apply' && this.chunkCache.forEach(
+            (chunkName, chunk) => {
+              if (chunk.status !== WAITING) {
+                chunk.status = WAITING
+                console.log('[Broker HMR] reloading', chunkName)
+              }
+            }
+          )
+
+        module.hot.addStatusHandler(this.invalidateChunks)
       }
+    }
+  }
+
+  componentWillUnmount () {
+    if (__DEV__) {
+      typeof module !== 'undefined' && module.hot &&
+        module.hot.removeStatusHandler(this.invalidateChunks)
     }
   }
 
@@ -95,7 +116,7 @@ export class LazyProvider extends React.Component {
     // when the chunk has resolved
     const chunk = this.chunkCache.get(chunkName)
 
-    if (chunk === void 0) {
+    if (chunk === void 0 || chunk.status === WAITING) {
       // a circular doubly linked list is used for maintaining the consumers
       // listening to a chunk's resolution because there are far fewer
       // operations in deleting a consumer from the listeners than you'd
