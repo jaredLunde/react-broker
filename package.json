@@ -1,8 +1,9 @@
 {
   "name": "react-broker",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Component lazy-loading + code splitting that works with SSR, Webpack 4, and Babel 7",
   "main": "cjs/index.js",
+  "browser": "es/index.js",
   "module": "es/index.js",
   "jsnext:main": "es/index.js",
   "esnext": "es/index.js",
