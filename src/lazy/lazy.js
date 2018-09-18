@@ -44,7 +44,7 @@ export function load (...instances) {
 
 // this is the visitor used by react-tree-walker which will load all of the
 // async components required by the current react tree
-function loadAllVisitor (element, instance) {
+export function loadAllVisitor (element, instance) {
   if (instance && instance.isLazyComponent === true) {
     return instance.load()
   }
@@ -383,6 +383,7 @@ export default function lazy (promises, opt = defaultOpt) {
 // the lazy object acts like 'exports' here
 lazy.load = load
 lazy.loadAll = loadAll
+lazy.loadAllVisitor = loadAllVisitor
 lazy.createChunkCache = createChunkCache
 lazy.Provider = LazyProvider
 lazy.WAITING = WAITING
