@@ -2,7 +2,7 @@ import React from 'react'
 import {CDLL} from 'cdll-memoize'
 import emptyObj from 'empty/object'
 import emptyArr from 'empty/array'
-import reactTreeWalker from 'react-tree-walker'
+import reactTreeWalker from '@jaredlunde/react-tree-walker'
 import {getChunkScripts, graphChunks} from './utils'
 
 

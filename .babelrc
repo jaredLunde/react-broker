@@ -4,9 +4,7 @@
   ],
   "env": {
     "cjs": {
-      "presets": [
-        "@inst-app/esx"
-      ]
+      "presets": ["@inst-app/esx"]
     },
     "es": {
       "presets": [
