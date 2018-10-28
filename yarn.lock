@@ -731,9 +731,9 @@
     babel-plugin-transform-react-pure-components "^3.1.2"
     babel-plugin-transform-react-remove-prop-types "^0.4.13"
 
-"@jaredlunde/react-tree-walker@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.yarnpkg.com/@jaredlunde/react-tree-walker/-/react-tree-walker-4.3.0.tgz#01fd37ed09d7732ba12c4a07e754f1bded6ac78d"
+"@jaredlunde/react-tree-walker@^4.3.6":
+  version "4.3.6"
+  resolved "https://registry.yarnpkg.com/@jaredlunde/react-tree-walker/-/react-tree-walker-4.3.6.tgz#db5e72d6b8f48969aeb3756b4fc5063bd42f5d7d"
 
 "@render-props/utils@^0.2.2":
   version "0.2.8"
