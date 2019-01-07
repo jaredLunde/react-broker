@@ -1,6 +1,6 @@
 {
   "name": "react-broker",
-  "version": "1.0.11",
+  "version": "1.0.12-alpha.0",
   "description": "Component lazy-loading + code splitting that works with SSR, Webpack 4, and Babel 7",
   "main": "cjs/index.js",
   "browser": "es/index.js",
@@ -37,6 +37,7 @@
     "build-lazy:cjs": "rimraf cjs && cross-env NODE_ENV=production BABEL_ENV=cjs babel src/lazy --out-dir cjs && npm run prettier:cjs",
     "build-macro": "rimraf macro && cross-env NODE_ENV=production BABEL_ENV=cjs babel src/macro --out-dir macro && npm run prettier-macro",
     "watch": "rimraf es && cross-env NODE_ENV=development BABEL_ENV=es babel ./src/lazy -w --out-dir es",
+    "watch-macro": "rimraf macro && cross-env NODE_ENV=development BABEL_ENV=cjs babel ./src/macro -w --out-dir macro",
     "prettier:es": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"es/**/*.js\"",
     "prettier:cjs": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"cjs/**/*.js\"",
     "prettier-macro": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"macro/**/*.js\""
