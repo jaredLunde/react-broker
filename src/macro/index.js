@@ -83,18 +83,78 @@ function parseArguments (args, state, babel) {
   let chunkName, source
   const promises = {}
   const options =
-    args.length > 1 && args[args.length - 1].type !== 'StringLiteral'
+    args.length > 1
+    && args[args.length - 1].type !== 'StringLiteral'
+    && args[args.length - 1].type !== 'TemplateLiteral'
       ? args[args.length - 1].node
       : void 0
   args = options === void 0 ? args : args.slice(0, -1)
 
   for (let arg of args) {
+    let value = ''
+
     switch (arg.type) {
+      case 'TemplateLiteral':
+        const raws = []
+        let next, prev
+        value = ''
+
+        for (let i in arg.node.quasis) {
+          const quasi = arg.node.quasis[i]
+          const expression = arg.node.expressions[i]
+          prev = next
+          value += quasi.value.cooked
+
+          if (expression) {
+            const expressionValue =
+              expression.type === 'Identifier'
+                ? t.identifier(expression.name)
+                : t.stringLiteral(expression.value)
+
+
+            if (expressionValue) {
+              value +=
+                '${'
+                + (
+                  expression.type === 'Identifier'
+                  ? expression.name + '}'
+                  : `'` + expression.value + `'` + '}'
+                )
+              next = t.binaryExpression('+', t.stringLiteral(quasi.value.cooked), expressionValue)
+            }
+            else {
+              next = t.stringLiteral(quasi.value.cooked)
+            }
+          }
+          else {
+            next = t.stringLiteral(quasi.value.cooked)
+          }
+
+          if (prev) {
+            next = t.binaryExpression('+', prev, next)
+          }
+        }
+
+        value += ''
+
+        source =
+          value.match(relativePkg) === null
+            ? value
+            : path.join(path.dirname(filename), value)
+        chunkName = chunkNameCache.get(source)
+        promises[chunkName] = t.arrowFunctionExpression(
+          [],
+          ensureTemplate({
+            SOURCE: next,
+            CHUNK_NAME: chunkName
+          }).expression
+        )
+      break;
       case 'StringLiteral':
         // string literals are interpreted as module paths that need to be
         // imported and code-split
         // const node = arg.node !== void 0 ? arg.node : arg
-        const {value} = arg.node
+        value = arg.node.value
         // if the package source isn't relative it is interpreted as-is,
         // otherwise it is joined to the path of the filename being parsed by
         // Babel
@@ -164,7 +224,7 @@ class ChunkNameCache {
       return this.chunks[source]
     }
 
-    let name = name = getShortChunkName(source)
+    let name = getShortChunkName(source)
     let originalName = name
     let i = 0
 

@@ -1,6 +1,7 @@
 import React from 'react'
 import lazy from 'react-broker/macro'
-const LazyUserList = lazy('../components/UserList', '../components/UserRenderer')
+const name = 'UserList'
+const LazyUserList = lazy(`../components/${name}`, '../components/UserRenderer')
 
 
 export default ({users}) => (
