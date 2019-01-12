@@ -94,6 +94,7 @@ function parseArguments (args, state, babel) {
     let value = ''
 
     switch (arg.type) {
+      /*
       case 'TemplateLiteral':
         const raws = []
         let next, prev
@@ -150,6 +151,7 @@ function parseArguments (args, state, babel) {
           }).expression
         )
       break;
+      */
       case 'StringLiteral':
         // string literals are interpreted as module paths that need to be
         // imported and code-split

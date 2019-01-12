@@ -4,11 +4,39 @@
   ],
   "env": {
     "cjs": {
-      "presets": ["@inst-app/esx"]
+      "presets": [
+        [
+          "@inst-app/esx",
+          {
+            "env": {
+              "targets": {
+                "chrome": "41",
+                "ie": "11"
+              }
+            },
+            "runtime": {
+              "corejs": 2
+            }
+          }
+        ]
+      ]
     },
     "es": {
       "presets": [
-        ["@inst-app/esx", {"env": {"modules": false}}]
+        [
+          "@inst-app/esx", {
+            "env": {
+              "modules": false,
+              "targets": {
+                "chrome": "41",
+                "ie": "11"
+              }
+            },
+            "runtime": {
+              "corejs": 2
+            }
+          }
+        ]
       ]
     }
   }
