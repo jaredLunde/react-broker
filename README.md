@@ -180,6 +180,25 @@ in the pre-render phase of the client.
 
 --------------------------------------------------------------------------------
 
+### Playing nice with `react-apollo`
+To make Broker load correctly with `react-apollo` and avoid Promise-level conflicts,
+see this [custom getMarkupFromTree](https://github.com/jaredLunde/stellar-apps/blob/master/packages/apollo/src/getMarkupFromTree.js).
+
+You can use this as a drop-in replacement for `react-apollo/getMarkupFromTree`,
+`react-apollo/getDataFromTree`, and `Broker.loadAll`.
+
+#### Example
+```js
+import {getMarkupFromTree} from '@stellar-apps/apollo'
+
+const page = await getMarkupFromTree({
+  tree: app, 
+  renderFunction: ReactDOMServer.renderToString
+})
+```
+
+-------------------------------------------------------------------------------
+
 ## Server-side Rendering
 
 #### client/render.js
