@@ -94,64 +94,6 @@ function parseArguments (args, state, babel) {
     let value = ''
 
     switch (arg.type) {
-      /*
-      case 'TemplateLiteral':
-        const raws = []
-        let next, prev
-        value = ''
-
-        for (let i in arg.node.quasis) {
-          const quasi = arg.node.quasis[i]
-          const expression = arg.node.expressions[i]
-          prev = next
-          value += quasi.value.cooked
-
-          if (expression) {
-            const expressionValue =
-              expression.type === 'Identifier'
-                ? t.identifier(expression.name)
-                : t.stringLiteral(expression.value)
-
-
-            if (expressionValue) {
-              value +=
-                '${'
-                + (
-                  expression.type === 'Identifier'
-                  ? expression.name + '}'
-                  : `'` + expression.value + `'` + '}'
-                )
-              next = t.binaryExpression('+', t.stringLiteral(quasi.value.cooked), expressionValue)
-            }
-            else {
-              next = t.stringLiteral(quasi.value.cooked)
-            }
-          }
-          else {
-            next = t.stringLiteral(quasi.value.cooked)
-          }
-
-          if (prev) {
-            next = t.binaryExpression('+', prev, next)
-          }
-        }
-
-        value += ''
-
-        source =
-          value.match(relativePkg) === null
-            ? value
-            : path.join(path.dirname(filename), value)
-        chunkName = chunkNameCache.get(source)
-        promises[chunkName] = t.arrowFunctionExpression(
-          [],
-          ensureTemplate({
-            SOURCE: next,
-            CHUNK_NAME: chunkName
-          }).expression
-        )
-      break;
-      */
       case 'StringLiteral':
         // string literals are interpreted as module paths that need to be
         // imported and code-split
@@ -178,28 +120,6 @@ function parseArguments (args, state, babel) {
           }).expression
         )
       break;
-      /**
-      case 'FunctionExpression':
-      case 'ArrowFunctionExpression':
-        // Functions and identifiers are interpreted as Promise-returning
-        // functions. They are no implicitly code-split by Broker but
-        // may be code-split if you do something like () => import('../Foo')
-        const {start, end} = arg.node
-        source = state.file.code.slice(start, end)
-        // chunk names are assigned for ease-of-use with the Lazy component
-        chunkName = chunkNameCache.get(
-          `${filename}${source}[${start}:${end}]`,
-          true
-        )
-        promises[chunkName] = arg.node
-      break;
-      case 'ObjectExpression':
-        // Lazy options
-        for (let property of arg.node.properties) {
-          options[property.key.name] = property.value
-        }
-      break;
-      */
       default:
         throw new Error(`[Broker Error] Unrecognized argument type: ${arg.type}`)
     }

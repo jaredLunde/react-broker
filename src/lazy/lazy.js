@@ -1,8 +1,10 @@
 import React from 'react'
 import {CDLL} from 'cdll-memoize'
-import emptyObj from 'empty/object'
-import emptyArr from 'empty/array'
+import {renderToStaticMarkup} from 'react-dom/server'
 import reactTreeWalker from '@jaredlunde/react-tree-walker'
+import emptyArr from 'empty/array'
+import PropTypes from 'prop-types'
+// import reactTreeWalker from '@jaredlunde/react-tree-walker'
 import {getChunkScripts, graphChunks} from './utils'
 
 
@@ -51,14 +53,75 @@ export function loadAllVisitor (element, instance) {
 }
 
 // preloads all of the async components used in the current react tree
-export function loadAll (app, visitor = loadAllVisitor, context = emptyObj) {
+export function loadAll (app, visitor = loadAllVisitor, context = {}) {
   return reactTreeWalker(app, visitor, context)
 }
 
+// preloads all of the async components used in the current react tree
+export class RenderPromises {
+  // Map from Query component instances to pending fetchData promises.
+  chunkPromises = new Map()
+
+  // A way of remembering queries we've seen during previous renderings,
+  // so that we never attempt to fetch them again in future renderings.
+  chunkGraveyard = new Set()
+
+  addChunkPromise (chunkPromise)  {
+    if (!this.chunkGraveyard.has(chunkPromise)) {
+      this.chunkPromises.set(chunkPromise)
+    }
+  }
+
+  hasPromises () {
+    return this.chunkPromises.size > 0;
+  }
+
+  consumeAndAwaitPromises () {
+    const promises = []
+    this.chunkPromises.forEach(promise => {
+      this.chunkGraveyard.add(promise)
+      promises.push(promise)
+    })
+
+    this.chunkPromises.clear()
+    return Promise.all(promises)
+  }
+}
+
+export function renderAll (app, render = renderToStaticMarkup) {
+  const renderPromises = new RenderPromises()
+
+  class RenderPromisesProvider extends React.Component {
+    static childContextTypes = {
+      renderPromises: PropTypes.object,
+    }
+
+    getChildContext () {
+      return {renderPromises}
+    }
+
+    render () {
+      return app
+    }
+  }
+
+  function process () {
+    const html = render(<RenderPromisesProvider/>)
+    return renderPromises.hasPromises()
+      ? renderPromises.consumeAndAwaitPromises().then(process)
+      : html
+  }
+
+  return Promise.resolve().then(process)
+}
 
 const globalChunkCache = createChunkCache()
 
 export class LazyProvider extends React.Component {
+  static contextTypes = {
+    renderPromises: PropTypes.object
+  }
+
   constructor (props) {
     super(props)
     // if there wasn't a chunkCache explicitly provided, one is created
@@ -115,7 +178,6 @@ export class LazyProvider extends React.Component {
     // subscribes a consumer to @chunkName and updates the consumer's state
     // when the chunk has resolved
     const chunk = this.chunkCache.get(chunkName)
-
     if (chunk === void 0 || chunk.status === WAITING) {
       // a circular doubly linked list is used for maintaining the consumers
       // listening to a chunk's resolution because there are far fewer
@@ -123,7 +185,13 @@ export class LazyProvider extends React.Component {
       // have with a plain Array
       const lazy = new CDLL([lazyComponent])
       this.chunkCache.set(chunkName, {status: WAITING, lazy})
-      return this.load(chunkName, lazyComponent.promises[chunkName]())
+      const promise = lazyComponent.promises[chunkName]()
+
+      if (this.context && this.context.renderPromises) {
+        this.context.renderPromises.addChunkPromise(promise)
+      }
+
+      return this.load(chunkName, promise)
     }
     else {
       // this chunk is already being listened to so all we need to do is add
@@ -201,7 +269,6 @@ export class LazyProvider extends React.Component {
   }
 }
 
-
 const defaultOpt = {loading: null, error: null}
 
 export default function lazy (promises, opt = defaultOpt) {
@@ -228,7 +295,7 @@ export default function lazy (promises, opt = defaultOpt) {
 
       for (let chunkName in this.promises) {
         // subscribes the component to changes in the chunk's status
-        this.props.lazy.subscribe(chunkName, this)
+        const promise = this.props.lazy.subscribe(chunkName, this)
         // gets the initial status of the chunk in checking whether or not
         // its already been subscribed/resolved
         status[chunkName] = this.props.lazy.getStatus(chunkName)
@@ -383,7 +450,7 @@ export default function lazy (promises, opt = defaultOpt) {
 // the lazy object acts like 'exports' here
 lazy.load = load
 lazy.loadAll = loadAll
-lazy.loadAllVisitor = loadAllVisitor
+lazy.renderAll = renderAll
 lazy.createChunkCache = createChunkCache
 lazy.Provider = LazyProvider
 lazy.WAITING = WAITING

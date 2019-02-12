@@ -3,7 +3,7 @@ export default, {
   LazyProvider,
   load,
   loadAll,
-  loadAllVisitor,
+  renderAll,
   WAITING,
   LOADING,
   RESOLVED,
