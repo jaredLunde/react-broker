@@ -60,7 +60,7 @@ export function walkAll (app, visitor = walkAllVisitor, context = {}) {
 */
 
 // preloads all of the async components used in the current react tree
-export class RenderPromises {
+export class WaitForPromises {
   // Map from Query component instances to pending promises.
   chunkPromises = []
 
@@ -70,15 +70,15 @@ export class RenderPromises {
 }
 
 export function loadAll (app, render = renderToStaticMarkup) {
-  const renderPromises = new RenderPromises()
+  const waitForPromises = new WaitForPromises()
 
-  class RenderPromisesProvider extends React.Component {
+  class WaitForPromisesProvider extends React.Component {
     static childContextTypes = {
-      renderPromises: PropTypes.object,
+      waitForPromises: PropTypes.object,
     }
 
     getChildContext () {
-      return {renderPromises}
+      return {waitForPromises}
     }
 
     render () {
@@ -87,9 +87,9 @@ export function loadAll (app, render = renderToStaticMarkup) {
   }
 
   function process () {
-    const html = render(<RenderPromisesProvider/>)
-    return renderPromises.chunkPromises.length > 0
-      ? renderPromises.load().then(process)
+    const html = render(<WaitForPromisesProvider/>)
+    return waitForPromises.chunkPromises.length > 0
+      ? waitForPromises.load().then(process)
       : html
   }
 
@@ -100,7 +100,7 @@ const globalChunkCache = createChunkCache()
 
 export class LazyProvider extends React.Component {
   static contextTypes = {
-    renderPromises: PropTypes.object
+    waitForPromises: PropTypes.object
   }
 
   constructor (props) {
@@ -169,8 +169,8 @@ export class LazyProvider extends React.Component {
       this.chunkCache.set(chunkName, {status: WAITING, lazy})
       const promise = lazyComponent.promises[chunkName]()
 
-      if (this.context && this.context.renderPromises) {
-        this.context.renderPromises.chunkPromises.push(promise)
+      if (this.context && this.context.waitForPromises) {
+        this.context.waitForPromises.chunkPromises.push(promise)
       }
 
       return this.load(chunkName, promise)
