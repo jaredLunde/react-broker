@@ -815,12 +815,13 @@
     lodash "^4.17.10"
     to-fast-properties "^2.0.0"
 
-"@jaredlunde/react-tree-walker@^4.3.6":
-  version "4.3.7"
-  resolved "https://registry.yarnpkg.com/@jaredlunde/react-tree-walker/-/react-tree-walker-4.3.7.tgz#c105e81a75b95970b42514a0159f47f725a7fe9b"
-  integrity sha512-+DinokLSIXahZzXaD6mvqhxZk3jFRI1C1lciEtHJen6WXzggzq2E7wNI1HhL//q8fsEoQiGVkiGUpVtxdGiHpQ==
+"@jaredlunde/react-tree-walker@^4.3.10":
+  version "4.3.10"
+  resolved "https://registry.yarnpkg.com/@jaredlunde/react-tree-walker/-/react-tree-walker-4.3.10.tgz#b900f89700526c6eaf1e0b7b0452addd3c668909"
+  integrity sha512-hsEzqFoYa/GJXGZdA8smgXTxT+6LEkcHpasIUvCM6fRQ0DE1ZmtgRm92L+1WT3HTY+sDNY7WkX8s5xsOgtnROA==
   dependencies:
-    "@babel/runtime-corejs2" "^7.2.0"
+    "@babel/runtime" "^7.3.1"
+    "@babel/runtime-corejs2" "^7.3.1"
 
 "@render-props/utils@^0.2.2":
   version "0.2.10"
