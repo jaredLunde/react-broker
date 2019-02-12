@@ -1,7 +1,7 @@
 import React from 'react'
 import {CDLL} from 'cdll-memoize'
 import {renderToStaticMarkup} from 'react-dom/server'
-import reactTreeWalker from '@jaredlunde/react-tree-walker'
+// import reactTreeWalker from '@jaredlunde/react-tree-walker'
 import emptyArr from 'empty/array'
 import PropTypes from 'prop-types'
 // import reactTreeWalker from '@jaredlunde/react-tree-walker'
@@ -44,51 +44,32 @@ export function load (...instances) {
   return Promise.all(instances.map(i => i.load()))
 }
 
+/*
 // this is the visitor used by react-tree-walker which will load all of the
 // async components required by the current react tree
-export function loadAllVisitor (element, instance) {
+export function walkAllVisitor (element, instance) {
   if (instance && instance.isLazyComponent === true) {
     return instance.load()
   }
 }
 
 // preloads all of the async components used in the current react tree
-export function loadAll (app, visitor = loadAllVisitor, context = {}) {
+export function walkAll (app, visitor = walkAllVisitor, context = {}) {
   return reactTreeWalker(app, visitor, context)
 }
+*/
 
 // preloads all of the async components used in the current react tree
 export class RenderPromises {
-  // Map from Query component instances to pending fetchData promises.
-  chunkPromises = new Map()
+  // Map from Query component instances to pending promises.
+  chunkPromises = []
 
-  // A way of remembering queries we've seen during previous renderings,
-  // so that we never attempt to fetch them again in future renderings.
-  chunkGraveyard = new Set()
-
-  addChunkPromise (chunkPromise)  {
-    if (!this.chunkGraveyard.has(chunkPromise)) {
-      this.chunkPromises.set(chunkPromise)
-    }
-  }
-
-  hasPromises () {
-    return this.chunkPromises.size > 0;
-  }
-
-  consumeAndAwaitPromises () {
-    const promises = []
-    this.chunkPromises.forEach(promise => {
-      this.chunkGraveyard.add(promise)
-      promises.push(promise)
-    })
-
-    this.chunkPromises.clear()
-    return Promise.all(promises)
+  load () {
+    return Promise.all(this.chunkPromises).then(() => this.chunkPromises = [])
   }
 }
 
-export function renderAll (app, render = renderToStaticMarkup) {
+export function loadAll (app, render = renderToStaticMarkup) {
   const renderPromises = new RenderPromises()
 
   class RenderPromisesProvider extends React.Component {
@@ -107,8 +88,8 @@ export function renderAll (app, render = renderToStaticMarkup) {
 
   function process () {
     const html = render(<RenderPromisesProvider/>)
-    return renderPromises.hasPromises()
-      ? renderPromises.consumeAndAwaitPromises().then(process)
+    return renderPromises.chunkPromises.length > 0
+      ? renderPromises.load().then(process)
       : html
   }
 
@@ -178,6 +159,7 @@ export class LazyProvider extends React.Component {
     // subscribes a consumer to @chunkName and updates the consumer's state
     // when the chunk has resolved
     const chunk = this.chunkCache.get(chunkName)
+
     if (chunk === void 0 || chunk.status === WAITING) {
       // a circular doubly linked list is used for maintaining the consumers
       // listening to a chunk's resolution because there are far fewer
@@ -188,7 +170,7 @@ export class LazyProvider extends React.Component {
       const promise = lazyComponent.promises[chunkName]()
 
       if (this.context && this.context.renderPromises) {
-        this.context.renderPromises.addChunkPromise(promise)
+        this.context.renderPromises.chunkPromises.push(promise)
       }
 
       return this.load(chunkName, promise)
@@ -449,8 +431,9 @@ export default function lazy (promises, opt = defaultOpt) {
 
 // the lazy object acts like 'exports' here
 lazy.load = load
+// lazy.walkAll = walkAll
+// lazy.walkAllVisitor = walkAllVisitor
 lazy.loadAll = loadAll
-lazy.renderAll = renderAll
 lazy.createChunkCache = createChunkCache
 lazy.Provider = LazyProvider
 lazy.WAITING = WAITING

@@ -1,6 +1,6 @@
 {
   "name": "react-broker",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Component lazy-loading + code splitting that works with SSR, Webpack 4, and Babel 7",
   "main": "dist/cjs/index.js",
   "browser": "dist/es/index.js",
@@ -21,12 +21,12 @@
   "dependencies": {
     "@babel/runtime": "^7.3.1",
     "@babel/runtime-corejs2": "^7.3.1",
-    "@jaredlunde/react-tree-walker": "^4.3.12",
     "babel-plugin-macros": "^2.4.0",
     "cdll-memoize": "^0.1.5",
     "empty": "^0.10.1"
   },
   "peerDependencies": {
+    "prop-types": "^15.7.1",
     "react": ">= 16.3.0",
     "react-dom": ">= 16.3.0"
   },

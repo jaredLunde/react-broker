@@ -25,10 +25,8 @@ export default function createRenderer({
       // keeps track of lazy chunks used by the current page
       const chunkCache = Broker.createChunkCache()
       const app = <App chunkCache={chunkCache} location={req.url}/>
-      // preloads the async components and when done renders the app string
-      await Broker.loadAll(app)
       // renders the app to a string
-      const page = ReactDOMServer.renderToString(app)
+      const page = await Broker.loadAll(app, ReactDOMServer.renderToString)
       // outputs the request
       res.set('Content-Type', 'text/html')
       res.send(`

@@ -1,7 +1,7 @@
 ![Wolf of Wall Street gif](https://media.giphy.com/media/8Q31McooUHTNu/giphy.gif)
 # `react-broker`
 
-A lightweight ([~5.2kB gzipped](https://bundlephobia.com/result?p=react-broker@1.0.0)) library for lazy components using React 16.3+. It's perfect for 
+A  ([lightweight](https://bundlephobia.com/result?p=react-broker@1.0.0)) library for lazy components using React 16.3+. It's perfect for 
 code splitting and has the simplest SSR story you've ever seen out-of-the-box.
 
 Critically, this package is only intended to work with Webpack, specifically
@@ -42,7 +42,6 @@ const LazyPage =
 
 ### Installation
 `yarn add react-broker` or `npm i react-broker`
-
 
 ### Examples
 **[Hello world](examples/hello-world)**<br/>
@@ -228,12 +227,12 @@ export default function createRenderer({
         <App/>
       </Broker.Provider>
     )
-    // Preloads the async components - this should always happen before
-    // ReactDOMServer.renderToString()
-    await Broker.loadAll(app)
-    // renders the application to a string
-    const page = ReactDOMServer.renderToString(app)
-
+    // Preloads the async components and renders the app to a string
+    const page = await Broker.loadAll(app, ReactDOMServer.renderToString)
+    // You could also do this if you have other requirements in addition to preloading with
+    // react-broker
+    // await Broker.loadAll(app, ReactDOMServer.renderToStaticMarkup)
+    // const page = await ReactDOMServer.renderToString(app)
     res.send(`
       <html>
         <head>
