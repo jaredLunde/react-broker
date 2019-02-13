@@ -1,6 +1,5 @@
 import React from 'react'
 import {CDLL} from 'cdll-memoize'
-import {renderToStaticMarkup} from 'react-dom/server'
 // import reactTreeWalker from '@jaredlunde/react-tree-walker'
 import emptyArr from 'empty/array'
 import PropTypes from 'prop-types'
@@ -69,7 +68,7 @@ export class WaitForPromises {
   }
 }
 
-export function loadAll (app, render = renderToStaticMarkup) {
+export function loadAll (app, render = require('react-dom/server').renderToStaticMarkup) {
   const waitForPromises = new WaitForPromises()
 
   class WaitForPromisesProvider extends React.Component {
