@@ -28,7 +28,7 @@ export function createChunkCache () {
     getChunks: stats => graphChunks(stats, cache.getChunkNames()),
     // returns a string of <script> tags for Webpack chunks used by the
     // current react tree
-    getChunkScripts: stats => getChunkScripts(stats, cache.getChunks(stats))
+    getChunkScripts: (stats, preload) => getChunkScripts(stats, cache.getChunks(stats), preload)
   }
 
   if (__DEV__) {
