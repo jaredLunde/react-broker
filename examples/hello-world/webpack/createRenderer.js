@@ -40,7 +40,7 @@ export default function createRenderer({
             name="viewport"
             content="width=device-width, user-scalable=yes, initial-scale=1.0"
           >
-          ${chunkCache.getChunkScripts(clientStats)}
+          ${chunkCache.getChunkScripts(clientStats, {preload: true})}
         </head>
         <body>
           <div id="⚛️">${page}</div>

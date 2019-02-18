@@ -1,9 +1,7 @@
 import React from 'react'
 import {CDLL} from 'cdll-memoize'
-// import reactTreeWalker from '@jaredlunde/react-tree-walker'
 import emptyArr from 'empty/array'
 import PropTypes from 'prop-types'
-// import reactTreeWalker from '@jaredlunde/react-tree-walker'
 import {getChunkScripts, graphChunks} from './utils'
 
 
@@ -42,21 +40,6 @@ export function createChunkCache () {
 export function load (...instances) {
   return Promise.all(instances.map(i => i.load()))
 }
-
-/*
-// this is the visitor used by react-tree-walker which will load all of the
-// async components required by the current react tree
-export function walkAllVisitor (element, instance) {
-  if (instance && instance.isLazyComponent === true) {
-    return instance.load()
-  }
-}
-
-// preloads all of the async components used in the current react tree
-export function walkAll (app, visitor = walkAllVisitor, context = {}) {
-  return reactTreeWalker(app, visitor, context)
-}
-*/
 
 // preloads all of the async components used in the current react tree
 export class WaitForPromises {
@@ -101,18 +84,17 @@ export function loadInitial (chunkCache = globalChunkCache) {
   let chunks = document.getElementById('__INITIAL_BROKER_CHUNKS__')
 
   if (!chunks) {
-    throw new Error('No chunk cache element was found at <script id="__INITIAL_BROKER_CHUNKS__">')
+    throw new Error(
+      'No chunk cache element was found at <script id="__INITIAL_BROKER_CHUNKS__">'
+    )
   }
 
   chunks = JSON.parse(chunks.firstChild.data)
+  const loading = []
 
-  const promises = []
-
-  // loads the chunk components
-  const scripts = document.querySelectorAll('script[data-rb]')
-
-  for (let script of scripts) {
-    promises.push(
+  // preloads the chunk scripts
+  for (let script of document.querySelectorAll('script[data-rb]')) {
+    loading.push(
       new Promise(
         resolve => {
           if (script.getAttribute('data-loaded')) {
@@ -126,27 +108,21 @@ export function loadInitial (chunkCache = globalChunkCache) {
     )
   }
 
-  return Promise.all(promises).then(
-    () => Object.keys(chunks).map(
+  return Promise.all(loading).then(
+    () => Object.keys(chunks).forEach(
       chunkName => {
-        const moduleId = chunks[chunkName]
+        if (chunkCache.get(chunkName) === void 0) {
+          let component
 
-        if (moduleId !== void 0 && chunkCache.get(chunkName) === void 0) {
-          // sets the component in the chunk cache
-          return new Promise(
-            resolve => {
-              chunkCache.set(
-                chunkName,
-                {
-                  status: RESOLVED,
-                  lazy: new CDLL([]),
-                  component: __webpack_require__(moduleId).default
-                }
-              )
-
-              resolve()
+          try {
+            component = __webpack_require__(chunks[chunkName]).default
+          }
+          finally {
+            // sets the component in the chunk cache if it is valid
+            if (typeof component === 'function') {
+              chunkCache.set(chunkName, {status: RESOLVED, lazy: new CDLL([]), component})
             }
-          )
+          }
         }
       }
     )

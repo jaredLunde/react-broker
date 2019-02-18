@@ -4,7 +4,7 @@ import {getRegex} from "./findChunks"
 
 const isExternalDefault = (chunkName, mod) => {
   const regex = getRegex(chunkName)
-  
+
   return (
     mod &&
     regex.test(mod.identifier)
