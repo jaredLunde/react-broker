@@ -3,6 +3,7 @@ export default, {
   LazyProvider,
   load,
   loadAll,
+  loadInitial,
   // walkAll,
   // walkAllVisitor,
   WAITING,

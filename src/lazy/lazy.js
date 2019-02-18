@@ -28,7 +28,7 @@ export function createChunkCache () {
     getChunks: stats => graphChunks(stats, cache.getChunkNames()),
     // returns a string of <script> tags for Webpack chunks used by the
     // current react tree
-    getChunkScripts: (stats, preload) => getChunkScripts(stats, cache.getChunks(stats), preload)
+    getChunkScripts: (stats, opt = {}) => getChunkScripts(stats, cache, opt)
   }
 
   if (__DEV__) {
@@ -93,6 +93,64 @@ export function loadAll (app, render = require('react-dom/server').renderToStati
   }
 
   return Promise.resolve().then(process)
+}
+
+// the purpose of this function is to avoid a flash or loading
+// spinner when your app initially hydrates/renders
+export function loadInitial (chunkCache = globalChunkCache) {
+  let chunks = document.getElementById('__INITIAL_BROKER_CHUNKS__')
+
+  if (!chunks) {
+    throw new Error('No chunk cache element was found at <script id="__INITIAL_BROKER_CHUNKS__">')
+  }
+
+  chunks = JSON.parse(chunks.firstChild.data)
+
+  const promises = []
+
+  // loads the chunk components
+  const scripts = document.querySelectorAll('script[data-rb]')
+
+  for (let script of scripts) {
+    promises.push(
+      new Promise(
+        resolve => {
+          if (script.getAttribute('data-loaded')) {
+            resolve()
+          }
+          else {
+            script.onload = resolve
+          }
+        }
+      )
+    )
+  }
+
+  return Promise.all(promises).then(
+    () => Object.keys(chunks).map(
+      chunkName => {
+        const moduleId = chunks[chunkName]
+
+        if (moduleId !== void 0 && chunkCache.get(chunkName) === void 0) {
+          // sets the component in the chunk cache
+          return new Promise(
+            resolve => {
+              chunkCache.set(
+                chunkName,
+                {
+                  status: RESOLVED,
+                  lazy: new CDLL([]),
+                  component: __webpack_require__(moduleId).default
+                }
+              )
+
+              resolve()
+            }
+          )
+        }
+      }
+    )
+  )
 }
 
 const globalChunkCache = createChunkCache()
@@ -433,6 +491,7 @@ lazy.load = load
 // lazy.walkAll = walkAll
 // lazy.walkAllVisitor = walkAllVisitor
 lazy.loadAll = loadAll
+lazy.loadInitial = loadInitial
 lazy.createChunkCache = createChunkCache
 lazy.Provider = LazyProvider
 lazy.WAITING = WAITING

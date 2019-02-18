@@ -104,6 +104,10 @@ must be defined at the top-level of your lazy loaded components.
 
 #### Props
 ##### chunkCache `{Broker.createChunkCache}`
+If no `chunkCache` is provided, a global chunk cache will be used. This is 
+really only OK if you're rendering in the client. SSR providers should use
+`Broker.createChunkCache`
+
 ```js
 import Broker from 'react-broker'
 
@@ -173,8 +177,20 @@ Broker.load(LazyA, LazyB).then(/*...*/)
 --------------------------------------------------------------------------------
 
 ### `Broker.loadAll(App: React.Element)`
-Preloads all of the components in your app. This is used on the server-side and
-in the pre-render phase of the client.
+Preloads all of the components in your app when server side rendering.
+
+#### See the [SSR section](#serverrenderjs) for an example
+
+--------------------------------------------------------------------------------
+
+### `Broker.loadInitial(chunkCache: Broker.createChunkCache)`
+Populates your chunk cache with the async components present in your application.
+This requires that `Broker.getChunkScripts` was used on the server side. The primary
+use case for this function is elimination loading components and flashes when 
+initially rendering your app in the browser.
+
+If no chunk cache is provided in the first argument, a global chunk cache will be 
+used.
 
 #### See the [SSR section](#clientrenderjs) for an example
 
@@ -215,7 +231,7 @@ const app = (
   </Broker.Provider>
 )
 
-Broker.loadAll(app).then(
+Broker.loadInitial().then(
   () => ReactDOM.hydrate(app, document.getElementById('⚛️'))
 )
 ```

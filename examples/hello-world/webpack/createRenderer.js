@@ -29,6 +29,7 @@ export default function createRenderer({
       const page = await Broker.loadAll(app, ReactDOMServer.renderToString)
       // outputs the request
       res.set('Content-Type', 'text/html')
+
       res.send(`
         <!DOCTYPE html>
         <html lang="en">
