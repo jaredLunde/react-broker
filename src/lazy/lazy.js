@@ -111,17 +111,15 @@ export function loadInitial (chunkCache = globalChunkCache) {
   return Promise.all(loading).then(
     () => Object.keys(chunks).forEach(
       chunkName => {
-        if (chunkCache.get(chunkName) === void 0) {
-          let component
+        let component
 
-          try {
-            component = __webpack_require__(chunks[chunkName]).default
-          }
-          finally {
-            // sets the component in the chunk cache if it is valid
-            if (typeof component === 'function') {
-              chunkCache.set(chunkName, {status: RESOLVED, lazy: new CDLL([]), component})
-            }
+        try {
+          component = __webpack_require__(chunks[chunkName]).default
+        }
+        finally {
+          // sets the component in the chunk cache if it is valid
+          if (typeof component === 'function') {
+            chunkCache.set(chunkName, {status: RESOLVED, lazy: new CDLL([]), component})
           }
         }
       }
