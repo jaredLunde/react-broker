@@ -131,7 +131,12 @@ function parseArguments (args, state, babel) {
 
 // shortens the chunk name to its parent directory basename and its basename
 function getShortChunkName (source) {
-  return path.basename(path.dirname(source)) + '/' + path.basename(source)
+  if (source.match(relativePkg) || path.isAbsolute(source)) {
+    return path.basename(path.dirname(source)) + '/' + path.basename(source)
+  }
+  else {
+    return source
+  }
 }
 // This is the chunk name cache which maps sources to their respective
 // chunk names. This is necessary because you could import the same module

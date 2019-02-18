@@ -6,7 +6,7 @@ import App from '../App'
 
 function hydrate (App) {
   const app = <App/>
-  return Broker.loadAll(app).then(
+  return Broker.loadInitial().then(
     () => ReactDOM.hydrate(app, document.getElementById('⚛️'))
   )
 }

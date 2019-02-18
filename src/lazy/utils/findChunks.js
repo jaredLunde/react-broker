@@ -1,10 +1,11 @@
 const reCache = {}
+const relativePkg = /^\.\//
 export const getRegex = chunkName => {
   if (!reCache[chunkName]) {
-    reCache[chunkName] = new RegExp(`/${chunkName}(/index)*\.(jsx?|tsx?|mjs)`);
+    reCache[chunkName] = new RegExp(`/${chunkName.replace(relativePkg, '')}(/index\.(jsx?|tsx?|mjs))*`)
   }
 
-  return reCache[chunkName];
+  return reCache[chunkName]
 }
 
 export default function findChunks (stats, chunkNames) {
@@ -20,7 +21,6 @@ export default function findChunks (stats, chunkNames) {
     }
 
     let found =  false
-
     for (let chunkName of chunkNames) {
       if (chunk.names.includes(chunkName)) {
         chunks.add(chunk)

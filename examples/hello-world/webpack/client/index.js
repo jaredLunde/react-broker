@@ -1,7 +1,7 @@
 const createConfig = require('../createConfig')
 const path = require('path')
 const webpack = require('webpack')
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
+const UglifyJsPlugin = require('terser-webpack-plugin')
 
 
 let productionPlugins = []
@@ -18,7 +18,7 @@ if (process.env.NODE_ENV === 'production') {
     minimizer: [
       new UglifyJsPlugin({
         cache: true,
-        uglifyOptions: {
+        terserOptions: {
           compress: {passes: 2, drop_console: false, dead_code: true},
           output: {comments: false},
           sourceMap: false
