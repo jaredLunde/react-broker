@@ -4,8 +4,6 @@ export default, {
   load,
   loadAll,
   loadInitial,
-  // walkAll,
-  // walkAllVisitor,
   WAITING,
   LOADING,
   RESOLVED,

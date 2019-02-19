@@ -462,8 +462,6 @@ export default function lazy (promises, opt = defaultOpt) {
 
 // the lazy object acts like 'exports' here
 lazy.load = load
-// lazy.walkAll = walkAll
-// lazy.walkAllVisitor = walkAllVisitor
 lazy.loadAll = loadAll
 lazy.loadInitial = loadInitial
 lazy.createChunkCache = createChunkCache
