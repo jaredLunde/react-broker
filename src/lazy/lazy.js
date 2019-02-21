@@ -2,7 +2,7 @@ import React from 'react'
 import {CDLL} from 'cdll-memoize'
 import emptyArr from 'empty/array'
 import PropTypes from 'prop-types'
-import {getChunkScripts, graphChunks} from './utils'
+import {getChunkScripts, findChunks} from './utils'
 
 
 // context is necessary for keeping track of which components in the
@@ -23,7 +23,7 @@ export function createChunkCache () {
     // returns an array of chunk names used by the current react tree
     getChunkNames: () => Object.keys(map),
     // returns a Set of Webpack chunk objects used by the current react tree
-    getChunks: stats => graphChunks(stats, cache.getChunkNames()),
+    getChunks: stats => findChunks(stats, cache.getChunkNames()),
     // returns a string of <script> tags for Webpack chunks used by the
     // current react tree
     getChunkScripts: (stats, opt = {}) => getChunkScripts(stats, cache, opt)

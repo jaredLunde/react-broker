@@ -34,13 +34,14 @@ const isRelativeDefault = (chunkName, mod) => {
   return mod && relRegex.test(mod.identifier) && mod.providedExports.includes('default')
 }
 
-export default function getChunkScripts (stats, cache, opt) {
-  const scripts = []
+export default function getChunkScripts (stats, cache, {async = true, defer, preload}) {
+  let scripts = []
+  let preloads = []
   const resolve = fn => url.resolve(stats.publicPath, fn)
   let preloadAttrs = ''
 
-  if (typeof opt.preload === 'object') {
-    preloadAttrs = Object.keys(opt.preload).map(k => `${k}="${opt.preload[k]}"`).join(' ')
+  if (typeof preload === 'object') {
+    preloadAttrs = Object.keys(preload).map(k => `${k}="${preload[k]}"`).join(' ')
     preloadAttrs = ` ${preloadAttrs}`
   }
 
@@ -65,24 +66,39 @@ export default function getChunkScripts (stats, cache, opt) {
           }
         )
 
-        if (opt.preload) {
-          scripts.push(`<link rel="preload" as="script" href="${filename}"${preloadAttrs}>`)
+        if (preload) {
+          const p = `<link rel="preload" as="script" href="${filename}"${preloadAttrs}>`
+
+          if (chunk.entry || chunk.initial) {
+            preloads.unshift(p)
+          }
+          else {
+            preloads.push(p)
+          }
         }
 
         scripts.push(
           `<script`
-            + `${rbNames.length > 0 ? ` data-rb="${rbNames.join('+')}"` : ' data-rb=""'} `
-            + `src="${filename}" defer `
-            + `onload="this.setAttribute('data-loaded', 'true')"`
-            + `></script>`
+          + `${rbNames.length > 0 ? ` data-rb="${rbNames.join('+')}"` : ' data-rb=""'} `
+          + `src="${filename}" `
+          + `${defer ? 'defer ' : async ? 'async ' : ''}`
+          + `onload="this.setAttribute('data-loaded', 'true')"`
+          + `></script>`
         )
       }
     )
   )
 
-  scripts.push(
+  scripts.unshift(
     `<script id="__INITIAL_BROKER_CHUNKS__" type="application/json">${JSON.stringify(moduleIds)}</script>`
   )
 
-  return scripts.join('\n')
+  preloads = preloads.join('')
+  scripts = scripts.join('')
+
+  return {
+    scripts,
+    preload: preloads,
+    toString: () => preloads + scripts
+  }
 }
