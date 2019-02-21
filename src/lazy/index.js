@@ -10,4 +10,4 @@ export default, {
   REJECTED
 } from './lazy'
 
-export {findChunks, graphChunks, getChunkScripts} from './utils'
+export {findChunks, getChunkScripts} from './utils'

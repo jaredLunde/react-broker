@@ -2,48 +2,61 @@ const reCache = {}
 const relativePkg = /^\.\//
 export const getRegex = chunkName => {
   if (!reCache[chunkName]) {
-    reCache[chunkName] = new RegExp(`/${chunkName.replace(relativePkg, '')}(/index\.(jsx?|tsx?|mjs))*`)
+    reCache[chunkName] = new RegExp(`/${chunkName.replace(relativePkg, '')}(/index\.(m?jsx?|tsx?))*`)
   }
 
   return reCache[chunkName]
 }
 
-export default function findChunks (stats, chunkNames) {
-  let entry = null
+export default function findChunks (stats, [...chunkNames]) {
   const chunks = new Set()
+  const chunkMap = {}
 
   for (let chunk of stats.chunks) {
+    chunkMap[chunk.id] = chunk
+
     if (chunk.entry) {
-      entry = chunk
+      chunks.add(chunk)
     }
     else if (chunk.initial) {
       chunks.add(chunk)
     }
+  }
 
-    let found =  false
-    for (let chunkName of chunkNames) {
-      if (chunk.names.includes(chunkName)) {
+  for (let chunkName of chunkNames) {
+    for (let chunk of stats.chunks) {
+      if (chunk.names.indexOf(chunkName) > -1) {
+        chunkNames.splice(chunkNames.indexOf(chunkName), 1)
         chunks.add(chunk)
-        found = true
-        break
       }
-    }
-
-    if (found) continue
-
-    for (let mod of chunk.modules) {
-      for (let chunkName of chunkNames) {
-        const regex = getRegex(chunkName)
-        if (regex.test(mod.identifier)) {
-          chunks.add(chunk)
-          found = true
-          break
-        }
-      }
-
-      if (found) break
     }
   }
 
-  return [entry, chunks]
+  for (let chunkName of chunkNames) {
+    for (let chunk of stats.chunks) {
+      for (let mod of chunk.modules) {
+        if (getRegex(chunkName).test(mod.identifier)) {
+          chunkNames.splice(chunkNames.indexOf(chunkName), 1)
+          chunks.add(chunk)
+        }
+      }
+    }
+  }
+
+  const chunkArray = Array.from(chunks)
+
+  for (let chunk of chunkArray) {
+    for (let sib of chunk.siblings) {
+      chunks.add(chunkMap[sib])
+    }
+  }
+
+  for (let chunk of chunkArray) {
+    if (chunk.entry) {
+      chunks.delete(chunk)
+      chunks.add(chunk)
+    }
+  }
+
+  return chunks
 }
