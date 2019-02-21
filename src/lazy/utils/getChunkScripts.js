@@ -1,38 +1,31 @@
 import url from 'url'
 import path from 'path'
-import {getRegex} from "./findChunks"
+import findChunks, {getRegex} from "./findChunks"
 
-const isExternalDefault = (chunkName, mod) => {
-  const regex = getRegex(chunkName)
 
-  return (
-    mod &&
-    regex.test(mod.identifier)
-    && (
-      (
-        mod.issuerName
-        && mod.identifier.includes(path.dirname(mod.issuerName).replace(/^\./, '')) === false
-      ) ||
-      mod.issuerName === null
-    )
-    && mod.providedExports.includes('default')
+const isExternalDefault = (regex, chunkName, mod) => (
+  mod
+  && mod.providedExports !== null
+  && mod.providedExports.indexOf('default') > -1
+  && regex.test(mod.identifier)
+  && (
+    mod.issuerName === null
+    || mod.identifier.includes(path.dirname(mod.issuerName).replace(/^\./, '')) === false
   )
-}
+)
 
 const reCache = {}
 const relativePkg = /^\.\//
 export const getRelRegex = (chunkName) => {
   if (!reCache[chunkName]) {
-    reCache[chunkName] = new RegExp(`/${chunkName.replace(relativePkg, '')}((/index)*\.(jsx?|tsx?|mjs))+`)
+    reCache[chunkName] = new RegExp(`/${chunkName.replace(relativePkg, '')}((/index)*\.(m?jsx?|tsx?))+`)
   }
 
   return reCache[chunkName]
 }
 
-const isRelativeDefault = (chunkName, mod) => {
-  const relRegex = getRelRegex(chunkName)
-  return mod && relRegex.test(mod.identifier) && mod.providedExports.includes('default')
-}
+const isRelativeDefault = (relRegex, chunkName, mod) =>
+  mod && relRegex.test(mod.identifier) && mod.providedExports.includes('default')
 
 export default function getChunkScripts (stats, cache, {async = true, defer, preload}) {
   let scripts = []
@@ -45,49 +38,57 @@ export default function getChunkScripts (stats, cache, {async = true, defer, pre
     preloadAttrs = ` ${preloadAttrs}`
   }
 
-  const chunkNames = cache.getChunkNames()
+  let i, j, k
+  let chunkNames = cache.getChunkNames()
   const moduleIds = {}
 
-  cache.getChunks(stats).forEach(
-    chunk => chunk.files.forEach(
-      file => {
-        const filename = resolve(file)
-        const rbNames = []
+  for (let chunk of findChunks(stats, chunkNames)) {
+    for (i = 0; i < chunk.files.length; i++) {
+      const file = chunk.files[i]
+      const filename = resolve(file)
+      const rbNames = []
 
-        chunkNames.forEach(
-          name => {
-            for (let mod of chunk.modules) {
-              if (isRelativeDefault(name, mod) || isExternalDefault(name, mod)) {
-                moduleIds[name] = mod.id
-                rbNames.push(name)
-                break
-              }
-            }
-          }
-        )
+      for (j = chunkNames.length - 1; j > -1; j--) {
+        const chunkName = chunkNames[j]
+        const modRegex = getRegex(chunkName)
+        const relRegex = getRelRegex(chunkName)
 
-        if (preload) {
-          const p = `<link rel="preload" as="script" href="${filename}"${preloadAttrs}>`
+        for (k = 0; k < chunk.modules.length; k++) {
+          const mod = chunk.modules[k]
 
-          if (chunk.entry || chunk.initial) {
-            preloads.unshift(p)
-          }
-          else {
-            preloads.push(p)
+          if (
+            isRelativeDefault(relRegex, chunkName, mod)
+            || isExternalDefault(modRegex, chunkName, mod)
+          ) {
+            moduleIds[chunkName] = mod.id
+            chunkNames.splice(j, 1)
+            rbNames.push(chunkName)
+            break
           }
         }
-
-        scripts.push(
-          `<script`
-          + `${rbNames.length > 0 ? ` data-rb="${rbNames.join('+')}"` : ' data-rb=""'} `
-          + `src="${filename}" `
-          + `${defer ? 'defer ' : async ? 'async ' : ''}`
-          + `onload="this.setAttribute('data-loaded', 'true')"`
-          + `></script>`
-        )
       }
-    )
-  )
+
+      if (preload) {
+        const p = `<link rel="preload" as="script" href="${filename}"${preloadAttrs}>`
+
+        if (chunk.entry || chunk.initial) {
+          preloads.unshift(p)
+        }
+        else {
+          preloads.push(p)
+        }
+      }
+
+      scripts.push(
+        `<script`
+        + `${rbNames.length > 0 ? ` data-rb="${rbNames.join('+')}"` : ' data-rb=""'} `
+        + `src="${filename}" `
+        + `${defer ? 'defer ' : async ? 'async ' : ''}`
+        + `onload="this.setAttribute('data-loaded', 'true')"`
+        + `></script>`
+      )
+    }
+  }
 
   scripts.unshift(
     `<script id="__INITIAL_BROKER_CHUNKS__" type="application/json">${JSON.stringify(moduleIds)}</script>`

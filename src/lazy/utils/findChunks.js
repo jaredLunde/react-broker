@@ -2,17 +2,20 @@ const reCache = {}
 const relativePkg = /^\.\//
 export const getRegex = chunkName => {
   if (!reCache[chunkName]) {
-    reCache[chunkName] = new RegExp(`/${chunkName.replace(relativePkg, '')}(/index\.(m?jsx?|tsx?))*`)
+    reCache[chunkName] = new RegExp(`/${chunkName.replace(relativePkg, '')}((\/index)?\.(m?jsx?|tsx?))?`)
   }
 
   return reCache[chunkName]
 }
 
-export default function findChunks (stats, [...chunkNames]) {
+export default function findChunks (stats, chunkNames) {
+  chunkNames = chunkNames.slice(0)  // avoids mutations by cloning
   const chunks = new Set()
   const chunkMap = {}
+  let i, j, k
 
-  for (let chunk of stats.chunks) {
+  for (i = 0; i < stats.chunks.length; i++) {
+    const chunk = stats.chunks[i]
     chunkMap[chunk.id] = chunk
 
     if (chunk.entry) {
@@ -23,20 +26,29 @@ export default function findChunks (stats, [...chunkNames]) {
     }
   }
 
-  for (let chunkName of chunkNames) {
-    for (let chunk of stats.chunks) {
+  for (i = chunkNames.length - 1; i > -1; i--) {
+    const chunkName = chunkNames[i]
+
+    for (j = 0; j < stats.chunks.length; j++) {
+      const chunk = stats.chunks[j]
+
       if (chunk.names.indexOf(chunkName) > -1) {
-        chunkNames.splice(chunkNames.indexOf(chunkName), 1)
+        chunkNames.splice(i, 1)
         chunks.add(chunk)
       }
     }
   }
 
-  for (let chunkName of chunkNames) {
-    for (let chunk of stats.chunks) {
-      for (let mod of chunk.modules) {
-        if (getRegex(chunkName).test(mod.identifier)) {
-          chunkNames.splice(chunkNames.indexOf(chunkName), 1)
+  for (i = chunkNames.length - 1; i > -1; i--) {
+    const chunkName = chunkNames[i]
+    const regex = getRegex(chunkName)
+
+    for (j = 0; j < stats.chunks.length; j++) {
+      const chunk = stats.chunks[j]
+
+      for (k = 0; k < chunk.modules.length; k++) {
+        if (regex.test(chunk.modules[k].identifier)) {
+          chunkNames.splice(i, 1)
           chunks.add(chunk)
         }
       }
@@ -45,13 +57,17 @@ export default function findChunks (stats, [...chunkNames]) {
 
   const chunkArray = Array.from(chunks)
 
-  for (let chunk of chunkArray) {
-    for (let sib of chunk.siblings) {
-      chunks.add(chunkMap[sib])
+  for (i = 0; i < chunkArray.length; i++) {
+    const chunk = chunkArray[i]
+
+    for (j = 0; j < chunk.siblings.length; j++) {
+      chunks.add(chunkMap[chunk.siblings[j]])
     }
   }
 
-  for (let chunk of chunkArray) {
+  for (i = 0; i < chunkArray.length; i++) {
+    const chunk = chunkArray[i]
+
     if (chunk.entry) {
       chunks.delete(chunk)
       chunks.add(chunk)
