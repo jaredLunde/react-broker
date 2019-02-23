@@ -7,6 +7,7 @@ const isExternalDefault = (regex, chunkName, mod) => (
   mod
   && mod.providedExports !== null
   && mod.providedExports.indexOf('default') > -1
+  && mod.identifier.indexOf(chunkName) > -1
   && regex.test(mod.identifier)
   && (
     mod.issuerName === null
@@ -25,7 +26,10 @@ export const getRelRegex = (chunkName) => {
 }
 
 const isRelativeDefault = (relRegex, chunkName, mod) =>
-  mod && mod.identifier.indexOf(chunkName) > -1 && mod.providedExports.includes('default') && relRegex.test(mod.identifier)
+  mod
+  && mod.identifier.indexOf(chunkName) > -1
+  && mod.providedExports.indexOf('default') > -1
+  && relRegex.test(mod.identifier)
 
 export default function getChunkScripts (stats, cache, {async = true, defer, preload}) {
   let scripts = []
