@@ -9,7 +9,7 @@ export const getRegex = chunkName => {
 }
 
 export default function findChunks (stats, chunkNames) {
-  chunkNames = chunkNames.slice(0)  // avoids mutations by cloning
+  chunkNames = chunkNames.slice(0)  // avoids unintended mutations via cloning
   const chunks = new Set()
   const chunkMap = {}
   let i, j, k
@@ -47,7 +47,11 @@ export default function findChunks (stats, chunkNames) {
       const chunk = stats.chunks[j]
 
       for (k = 0; k < chunk.modules.length; k++) {
-        if (regex.test(chunk.modules[k].identifier)) {
+        if (
+          // does an indexOf first for perf
+          chunk.modules[k].identifier.indexOf(chunkName)
+          && regex.test(chunk.modules[k].identifier)
+        ) {
           chunkNames.splice(i, 1)
           chunks.add(chunk)
         }
