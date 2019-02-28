@@ -192,9 +192,21 @@ Broker.load(LazyA, LazyB).then(/*...*/)
 
 --------------------------------------------------------------------------------
 
-### `Broker.loadAll(App: React.Element)`
-Tracks all of the chunks used in your app during the server side render.
+### `Broker.loadAll(`
+### `  App: React.Element,`
+### `  renderer: ReactDOM.renderToStaticMarkup|renderToString`
+### `)`
+```
+Tracks all of the chunks used in your app during the server side render and
+optionally renders your app to a string
 
+- `App` `{React.Element}`
+  - Your React application
+- `renderer` `{ReactDOM.renderToStaticMarkup|ReactDOM.renderToString}`
+  - **default** `ReactDOM.renderToStaticMarkup`
+  - The renderer used for determining the chunks used in your app. To avoid,
+    extra renders, you could change this to `ReactDOM.renderToString.
+  
 #### See the [SSR section](#serverrenderjs) for an example
 
 --------------------------------------------------------------------------------
