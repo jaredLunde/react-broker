@@ -12,8 +12,8 @@ for `babel-plugin-macros` (which is shipped with CRA).
 ```js
 import lazy from 'react-broker/macro'
 
-// Automatically generates require.ensure/dynamic imports for webpack with
-// babel-plugin-macros. Just give it the path.
+// Automatically generates dynamic imports for webpack with babel-plugin-macros. 
+// Just give it the path.
 const LazyPage = lazy('../pages/Page', {loading: props => 'Loading...'})
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -25,7 +25,7 @@ const LazyPage =
     {
       'src/pages/Page': import(/* webpackChunkName: "src/pages/Page" */ '../pages/Page')
     },
-    {loading: () => 'Loading...'}
+    {loading: props => 'Loading...'}
   )
 ```
 
@@ -98,16 +98,19 @@ must be defined at the top-level of your lazy loaded components.
 
 #### Props
 ##### chunkCache `{Broker.createChunkCache}`
-If no `chunkCache` is provided, a global chunk cache will be used. This is 
-really only OK if you're rendering in the client. SSR providers should use
+You only provide a `chunkCache` on the server side. In the client it is not
+allowed. The chunk cache is used for tracking which chunks were loaded during
+the latest render phase of the app.
 `Broker.createChunkCache`
 
 ```js
 import Broker from 'react-broker'
 
+const chunkCache = Broker.createChunkCache()
+
 function App (props) {
   return (
-    <Broker.Provider chunkCache={Broker.createChunkCache()}>
+    <Broker.Provider chunkCache={chunkCache}>
       <LazyPage id={props.id}/>
     </Broker.Provider>
   )
@@ -124,10 +127,29 @@ Returns an `array` of all the Webpack chunk names loaded into the current app.
 
 ##### `createChunkCache.getChunks(webpackStats)`
 Returns a `Set` of all the Webpack chunks loaded into the current app.
-
-##### `createChunkCache.getChunkScripts(webpackStats)`
+- `webpackStats` `<Object>`
+  - The [stats](https://webpack.js.org/configuration/stats/) object created by 
+    Webpack.
+    
+##### `createChunkCache.getChunkScripts(webpackStats, options)`
 Returns a `string` representation of all the `<script>` tags to include in the
 output of your app when using with SSR.
+- `webpackStats` `{Object}`
+  - The [stats](https://webpack.js.org/configuration/stats/) object created by 
+    Webpack.
+- `options` `{Object}`
+  - `preload` `{Bool|Object}`
+     - If `true`, this will generate `<link rel='preload'>` tags with your scripts.
+     - If an `object`, the key/value pairs will be added to the `<link rel='preload'>` 
+       tags as attributes. e.g. `{preload: {crossorigin: 'anonymous'}}` generates
+       `<link rel='preload' as='script' crossorigin='anonymous' href='...'>`
+  - `async` `{Bool}`
+     - If `true`, an `async` flag will be added to your `<script>` tags
+     - **default** `true`
+  - `defer` `{Bool}`
+     - If `true`, a `defer` flag will be added to your `<script>` tags and `async`
+       will be omitted
+     - **default** `false`
 
 #### See the [SSR section](#serverrenderjs) for an example
 
@@ -171,7 +193,7 @@ Broker.load(LazyA, LazyB).then(/*...*/)
 --------------------------------------------------------------------------------
 
 ### `Broker.loadAll(App: React.Element)`
-Preloads all of the components in your app when server side rendering.
+Tracks all of the chunks used in your app during the server side render.
 
 #### See the [SSR section](#serverrenderjs) for an example
 
@@ -182,9 +204,6 @@ Populates your chunk cache with the async components present in your application
 This requires that `Broker.getChunkScripts` was used on the server side. The primary
 use case for this function is elimination loading components and flashes when 
 initially rendering your app in the browser.
-
-If no chunk cache is provided in the first argument, a global chunk cache will be 
-used.
 
 #### See the [SSR section](#clientrenderjs) for an example
 
