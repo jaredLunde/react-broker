@@ -6,6 +6,7 @@
   "license": "MIT",
   "private": false,
   "devDependencies": {
+    "@babel/plugin-syntax-dynamic-import": "^7.2.0",
     "@inst-app/babel-preset-esx": "^1.0.0",
     "@inst-app/babel-preset-react": "^1.0.0",
     "@inst-app/webpack-deps": "^1.0.1",

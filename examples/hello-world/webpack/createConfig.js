@@ -54,7 +54,7 @@ module.exports = function createConfig (...configs) {
                 cacheDirectory: false,
                 presets: [
                   [
-                    '@inst-app/esx', {
+                    '@stellar-apps/es', {
                       env: {
                         "useBuiltIns": "usage",
                         "loose": true,
@@ -63,10 +63,9 @@ module.exports = function createConfig (...configs) {
                       "runtime": {corejs: 2}
                     }
                   ],
-                  '@inst-app/react',
+                  '@stellar-apps/react',
                 ],
-                comments: process.env.NODE_ENV === 'development',
-                plugins: ['macros']
+                comments: process.env.NODE_ENV === 'development'
               }
             },
             exclude: /node_modules/

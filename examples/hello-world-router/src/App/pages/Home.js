@@ -5,7 +5,7 @@ const LazyUserList = lazy('../components/UserList', '../components/UserRenderer'
 
 export default ({users}) => (
   <>
-    <h1>Welcome</h1>
+    <h1>Welcome!!</h1>
 
     <LazyUserList>
       {(UserList, UserRenderer, lazy) =>

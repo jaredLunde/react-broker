@@ -23,13 +23,7 @@ const LazyPage = lazy('../pages/Page', {loading: props => 'Loading...'})
 const LazyPage =
   (typeof Broker !== 'undefined' ? Broker : require('react-broker').default(
     {
-      'pages/Page': new Promise(function (resolve) {
-        return require.ensure(
-          [],
-          function (require) {resolve(require('../pages/Page'))},
-          'pages/Page'
-        )
-      })
+      'src/pages/Page': import(/* webpackChunkName: "src/pages/Page" */ '../pages/Page')
     },
     {loading: () => 'Loading...'}
   )

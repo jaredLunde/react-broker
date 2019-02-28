@@ -18,12 +18,12 @@ function evaluateMacros({references, state, babel}) {
 // if Broker is defined in the scope then it will use that Broker, otherwise
 // it requires the module.
 function makeLegacyEnsure ({references, state, babel, referencePath}) {
-  const brokerTemplate = babel.template(`
+  const brokerTemplate = babel.template.smart(`
     (typeof Broker !== 'undefined' ? Broker : require('${pkgName}').default)(
       PROMISES,
       OPTIONS
     )
-  `)
+  `, {preserveComments: true})
 
   const {promises, options} = parseArguments(
     referencePath.parentPath.get('arguments'),
@@ -41,6 +41,20 @@ function makeLegacyEnsure ({references, state, babel, referencePath}) {
       PROMISES: toObjectExpression(promises, babel),
       OPTIONS: options
     })
+  )
+
+  referencePath.parentPath.get('arguments')[0].get('properties').forEach(
+    prop => {
+      // this adds webpack magic comment for chunks names
+      // prop.get('key') is the key of the current property
+      // prop.get('value') is the value of the current property
+      //     .get('value').get('body') is the import() call expression
+      //     .get('arguments')[0] is the first argument of the import(), which is the source
+      prop.get('value').get('body').get('arguments')[0].addComment(
+        "leading",
+        ` webpackChunkName: ${prop.get('key')} `
+      )
+    }
   )
 }
 
@@ -64,22 +78,9 @@ const relativePkg = /^\./g
 // Identifers, and plain Functions, are all excluded from code-splitting and
 // are interpreted as-is.
 function parseArguments (args, state, babel) {
-  const {file: {opts: {filename}}} = state
-  const {types: t, template} = babel
-  // since I can't add magic comments for Webpack with dynamic imports in babel
-  // yet, I had to revert to using the Webpack's legacy code-splitting API
-  // using require.ensure
-  const ensureTemplate = babel.template(`
-    new Promise(
-      function (resolve) {
-        return require.ensure(
-          [],
-          function (require) { resolve(require(SOURCE)) },
-          'CHUNK_NAME'
-        )
-      }
-    )
-  `)
+  const {file: {opts: {filename, plugins}}} = state
+  const {types: t} = babel
+
   let chunkName, source
   const promises = {}
   const options =
@@ -112,12 +113,13 @@ function parseArguments (args, state, babel) {
           throw new Error(`[Broker Error] duplicate import: ${source}`)
         }
         // creates a function that returns the import promise
+        // SEE: https://babeljs.io/docs/en/babel-types#callexpression
         promises[chunkName] = t.arrowFunctionExpression(
           [],
-          ensureTemplate({
-            SOURCE: t.stringLiteral(source),
-            CHUNK_NAME: chunkName
-          }).expression
+          t.callExpression(
+            t.identifier('import'),
+            [t.stringLiteral(source)]
+          )
         )
       break;
       default:
@@ -132,7 +134,7 @@ function parseArguments (args, state, babel) {
 // shortens the chunk name to its parent directory basename and its basename
 function getShortChunkName (source) {
   if (source.match(relativePkg) || path.isAbsolute(source)) {
-    return path.basename(path.dirname(source)) + '/' + path.basename(source)
+    return path.dirname(source).split(path.sep).slice(-2).join('/') + '/' + path.basename(source)
   }
   else {
     return source
@@ -175,16 +177,3 @@ class ChunkNameCache {
 }
 
 const chunkNameCache = new ChunkNameCache()
-/*
-Dynamic imports will be used once Babel adds the option to add magic comments
-without a babel.template()
-
-function makeDynamicImport ({references, state, babel, referencePath}) {
-  const tpl = impTemplate({
-    IMPORT: t.arrowFunctionExpression(
-      [],
-      t.callExpression(t.import(), [t.stringLiteral(source)])
-    ),
-    OPTIONS: String(referencePath.parentPath.get('arguments')[1])
-  })}
-*/

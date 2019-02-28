@@ -7,9 +7,9 @@ import App from '../App'
 function hydrate (App) {
   const app = <App/>
   return Broker.loadInitial().then(
-    () => ReactDOM.hydrate(app, document.getElementById('⚛️'))
+    () => ReactDOM.render(app, document.getElementById('⚛️'))
   )
 }
 
-module.hot && module.hot.accept('../App', () => hydrate(require('../App').default))
+module.hot && module.hot.accept()
 hydrate(App)

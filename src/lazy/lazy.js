@@ -101,7 +101,7 @@ export function loadInitial (chunkCache = globalChunkCache) {
             resolve()
           }
           else {
-            script.onload = resolve
+            script.addEventListener('load', resolve)
           }
         }
       )
@@ -119,6 +119,10 @@ export function loadInitial (chunkCache = globalChunkCache) {
         finally {
           // sets the component in the chunk cache if it is valid
           if (typeof component === 'function') {
+            if (typeof module !== 'undefined' && module.hot) {
+              __webpack_require__.c[chunks[chunkName]].hot.accept()
+            }
+
             chunkCache.set(chunkName, {status: RESOLVED, lazy: new CDLL([]), component})
           }
         }
@@ -152,15 +156,56 @@ export class LazyProvider extends React.Component {
     // this clears the chunk cache when HMR disposes of a module
     if (__DEV__) {
       if (typeof module !== 'undefined' && module.hot) {
-        this.invalidateChunks =
-          status => status === 'apply' && this.chunkCache.forEach(
-            (chunkName, chunk) => {
-              if (chunk.status !== WAITING) {
-                chunk.status = WAITING
-                console.log('[Broker HMR] reloading', chunkName)
-              }
+        this.invalidateChunks = status => {
+          if (status === 'idle') {
+            // fetches any preloaded chunks
+            console.log('[Broker HMR] reloading')
+            let chunks = document.getElementById('__INITIAL_BROKER_CHUNKS__')
+            const reloaded = new Set()
+
+            if (!!chunks) {
+              // initial chunks were loaded and we need this workaround to get them to
+              // refresh for some reason
+              chunks = JSON.parse(chunks.firstChild.data)
+
+              Object.keys(chunks).forEach(
+                chunkName => {
+                  if (typeof module !== 'undefined' && module.hot) {
+                    let component
+
+                    try {
+                      component = __webpack_require__(chunks[chunkName]).default
+                    }
+                    finally {
+                      // sets the component in the chunk cache if it is valid
+                      if (typeof component === 'function') {
+                        __webpack_require__.c[chunks[chunkName]].hot.accept()
+                      }
+                      const chunk = this.chunkCache.get(chunkName)
+                      chunk.status = WAITING
+                      reloaded.add(chunkName)
+
+                      this.load(
+                        chunkName,
+                        Promise.resolve(__webpack_require__.c[chunks[chunkName]].exports)
+                      )
+                      console.log(' -', chunkName)
+                    }
+                  }
+                }
+              )
             }
-          )
+
+            this.chunkCache.forEach(
+              (chunkName, chunk) => {
+                if (reloaded.has(chunkName) === false && chunk.status !== WAITING) {
+                  chunk.status = WAITING
+                  console.log(' -', chunkName)
+                }
+              }
+            )
+          }
+        }
 
         module.hot.addStatusHandler(this.invalidateChunks)
       }
