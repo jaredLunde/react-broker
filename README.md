@@ -268,7 +268,7 @@ export default function createRenderer({
   app.get('*', /* Note 'async' here */ async (req, res, next) => {
     res.set('Content-Type', 'text/html')
     // keeps track of lazy chunks used by the current page
-    const chunkCache = createChunkCache()
+    const chunkCache = Broker.createChunkCache()
     // chunkCache is passed to Broker.Provider as a prop
     const app = (
       <Broker.Provider chunkCache={chunkCache}>
@@ -281,15 +281,18 @@ export default function createRenderer({
     // react-broker
     // await Broker.loadAll(app, ReactDOMServer.renderToStaticMarkup)
     // const page = await ReactDOMServer.renderToString(app)
+    const chunks = chunkCache.getChunkScripts(clientStats, {preload: true})
+
     res.send(`
       <html>
         <head>
-          ${chunkCache.getChunkScripts(clientStats)}
+          ${chunks.preload}
         </head>
         <body>
           <div id='⚛️'>
             ${app}
           </div>
+          ${chunks.scripts}
         </body>
       </html>
     `)
