@@ -281,6 +281,8 @@ export default function createRenderer({
     // react-broker
     // await Broker.loadAll(app, ReactDOMServer.renderToStaticMarkup)
     // const page = await ReactDOMServer.renderToString(app)
+    
+    // Generates <script> and <preload> tags for this page
     const chunks = chunkCache.getChunkScripts(clientStats, {preload: true})
 
     res.send(`
