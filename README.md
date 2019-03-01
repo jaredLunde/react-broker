@@ -67,16 +67,15 @@ regular component.
 You may also lazy load external library components, but just know that the component in question must be the 
 `default` export.
 ```js
-// Single component macro
 // Used like a regular component
 const LazyPage = lazy('./pages/Home', {loading: props => 'Loading ${props.id}...'})
+
 <LazyPage id={1}>
   // ...
 </LazyPage>
 ```
 
 **options** `{Object}`<br/>
-NOTE: Only single-component macros have these options
 - `loading (props, context{retry, error})`
   - **props** props passed the component
   - **context**
