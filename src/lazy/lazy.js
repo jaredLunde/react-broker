@@ -394,8 +394,6 @@ export default function lazy (promises, opt = defaultOpt) {
 
     render () {
       let {status, component, error} = this.state
-      // I avoid Babel destructuring here because this way is much more
-      // performant than using Babel's loop
       let {children, lazy, ...props} = this.props
 
       switch (status) {
