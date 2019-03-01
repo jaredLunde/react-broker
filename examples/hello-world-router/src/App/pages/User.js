@@ -1,6 +1,6 @@
 import React from 'react'
 import {Link} from 'react-router-dom'
-import {LazyHome, LazyUser} from '../routes'
+import {LazyHome} from '../routes'
 
 
 export default ({data: {username, id}, users}) => (

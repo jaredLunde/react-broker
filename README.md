@@ -21,12 +21,17 @@ const LazyPage = lazy('../pages/Page', {loading: props => 'Loading...'})
 ///////////////////////////////////////////////////////////////////////////////
 
 const LazyPage =
-  (typeof Broker !== 'undefined' ? Broker : require('react-broker').default(
+  (typeof Broker !== 'undefined' ? Broker : require('react-broker').default)(
     {
       'src/pages/Page': import(/* webpackChunkName: "src/pages/Page" */ '../pages/Page')
     },
     {loading: props => 'Loading...'}
   )
+  
+function App () {
+  // Look at me! I'm used like a normal component.
+  return <LazyPage id='1'/>
+}
 ```
 
 ### Requirements
@@ -51,10 +56,16 @@ The function that transforms your imports and delegates your async components.
 import lazy from 'react-broker/macro'
 ```
 
-#### `lazy(...components <String>, options <Object>)`
-**components** `{String}`<br/>
-One or several paths to React components you want to lazy load. These cannot be
-passed via an identifier, they have to be raw strings.
+#### `lazy(component <String>, options <Object>)`
+**component** `{String}`<br/>
+A path to a React component you want to lazy load. The component must be in the `default` 
+export of the file. 
+
+Paths cannot be passed via an identifier, it has to be a plain string. It is used just like a 
+regular component. 
+
+You may also lazy load external library components, but just know that the component in question must be the 
+`default` export.
 ```js
 // Single component macro
 // Used like a regular component
@@ -62,20 +73,6 @@ const LazyPage = lazy('./pages/Home', {loading: props => 'Loading ${props.id}...
 <LazyPage id={1}>
   // ...
 </LazyPage>
-
-// Multiple component macro
-// Used similarly to the render props pattern
-const LazyPages = lazy('./pages/Home', './ui/UserList')
-<LazyPages>
-  {(Home, UserList, {isLoading, isDone, isError, status, error}) =>
-    isLoading
-      ? 'Loading...'
-      : (
-          <Home>
-            <UserList users={users}/>
-          </Home>
-        )}
-</LazyPages>
 ```
 
 **options** `{Object}`<br/>
@@ -162,7 +159,7 @@ To skip the macro you could do something like this with the Webpack code-splitti
 API:
 ```js
 import Broker from 'react-broker'
-Broker({uniqueChunkName: require.ensure(...)}, {loading: props => 'Loading...'})
+Broker({uniqueChunkName: import(...)}, {loading: props => 'Loading...'})
 ```
 
 #### `Lazy.load()`
