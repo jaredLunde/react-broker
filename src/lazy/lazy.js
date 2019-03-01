@@ -365,7 +365,7 @@ export default function lazy (promises, opt = defaultOpt) {
     // sets LOADING status for chunks that are currently resolving
     resolving =
       chunkName => this.mounted === true && this.setState(
-        ({status, component, error}) => status === LOADING ? null : ({
+        ({status}) => status === LOADING ? null : ({
           status: LOADING,
           component: null,
           error: null
@@ -374,22 +374,18 @@ export default function lazy (promises, opt = defaultOpt) {
 
     // sets RESOLVED status for chunks that have been resolved
     resolved =
-      (chunkName, resolvedComponent) => this.unmounted === false && this.setState(
-        ({status, error, component}) => ({
-          status: RESOLVED,
-          component: resolvedComponent,
-          error: null
-        })
-      )
+      (chunkName, resolvedComponent) => this.unmounted === false && this.setState({
+        status: RESOLVED,
+        component: resolvedComponent,
+        error: null
+      })
 
     // sets REJECTED status for chunks that have been rejected
     rejected =
-      (chunkName, error) => this.unmounted === false && this.setState(
-        ({status, error}) => ({
-          status: REJECTED,
-          error
-        })
-      )
+      (chunkName, error) => this.unmounted === false && this.setState({
+        status: REJECTED,
+        error
+      })
 
     // loads the chunk assigned to this component and passes any
     // defined props along to the promise wrapper
@@ -399,9 +395,7 @@ export default function lazy (promises, opt = defaultOpt) {
       let {status, component, error} = this.state
       // I avoid Babel destructuring here because this way is much more
       // performant than using Babel's loop
-      let props = Object.assign({}, this.props)
-      delete props.children
-      delete props.lazy
+      let {children, lazy, ...props} = this.props
 
       switch (status) {
         case WAITING:
@@ -421,7 +415,7 @@ export default function lazy (promises, opt = defaultOpt) {
           return render ? render(props, {retry: this.load, error}) : null
         case RESOLVED:
           // returns the proper resolved component
-          return React.createElement(component, props, this.props.children)
+          return React.createElement(component, props, children)
       }
     }
   }
