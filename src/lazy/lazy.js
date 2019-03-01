@@ -330,19 +330,12 @@ const defaultOpt = {loading: null, error: null}
 
 export default function lazy (promises, opt = defaultOpt) {
   const chunkName = Object.keys(promises)[0]
-  // Lazy is a 2-in-1 component in the sense that it renders differently
-  // depending on whether or not there are multiple loaders assigned to it.
-  //
-  // When there are multiple loaders it acts like a render-prop component
-  // without 'loading' and 'error' options.
   class Lazy extends React.Component {
     // since Promise isn't cancellable this is necessary for avoiding
     // 'update on unmounted component' errors in React
     mounted = false
     unmounted = false
-    // used by Broker.loadAll() for determining whether or not a load()
-    // method should be called on a component in the react tree
-    isLazyComponent = true
+    // the promise function tied to this chunk
     promise = promises[chunkName]
     // caches the name of the chunk
     chunkName = chunkName
