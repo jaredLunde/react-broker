@@ -330,6 +330,7 @@ const defaultOpt = {loading: null, error: null}
 
 export default function lazy (promises, opt = defaultOpt) {
   const chunkName = Object.keys(promises)[0]
+
   class Lazy extends React.Component {
     // since Promise isn't cancellable this is necessary for avoiding
     // 'update on unmounted component' errors in React
@@ -364,7 +365,7 @@ export default function lazy (promises, opt = defaultOpt) {
 
     // sets LOADING status for chunks that are currently resolving
     resolving =
-      chunkName => this.mounted === true && this.setState(
+      () => this.mounted === true && this.setState(
         ({status}) => status === LOADING ? null : ({
           status: LOADING,
           component: null,
@@ -423,15 +424,10 @@ export default function lazy (promises, opt = defaultOpt) {
   // wraps the Lazy component with the context consumer so that it gets updated
   // when chunk status changes
   function LazyConsumer (props) {
-    return <Consumer children={
-      function (cxt) { return <Lazy lazy={cxt} {...props}/> }
-    }/>
+    return <Consumer children={cxt => <Lazy lazy={cxt} {...props}/>}/>
   }
-
   // necessary for calling Component.load from the application code
-  LazyConsumer.load = () =>
-    Promise.all(Object.values(promises).map(p => p()))
-
+  LazyConsumer.load = () => Promise.all(Object.values(promises).map(p => p()))
   // <Lazy(pages/Home)> makes visual grep'ing easier in react-dev-tools
   if (__DEV__) {
     LazyConsumer.displayName = `Lazy(${Object.keys(promises).join(', ')})`
