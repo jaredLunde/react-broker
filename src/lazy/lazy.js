@@ -160,7 +160,6 @@ export class LazyProvider extends React.Component {
             // fetches any preloaded chunks
             console.log('[Broker HMR] reloading')
             let chunks = document.getElementById('__INITIAL_BROKER_CHUNKS__')
-            const reloaded = new Set()
 
             if (!!chunks) {
               // initial chunks were loaded and we need this workaround to get them to
@@ -176,28 +175,26 @@ export class LazyProvider extends React.Component {
                       component = __webpack_require__(chunks[chunkName]).default
                     }
                     finally {
-                      // sets the component in the chunk cache if it is valid
-                      if (typeof component === 'function') {
-                        __webpack_require__.c[chunks[chunkName]].hot.accept()
-                      }
                       const chunk = this.chunkCache.get(chunkName)
                       chunk.status = WAITING
-                      reloaded.add(chunkName)
 
                       this.load(
                         chunkName,
                         Promise.resolve(__webpack_require__.c[chunks[chunkName]].exports)
                       )
+
+                      __webpack_require__.c[chunks[chunkName]].hot.accept()
                       console.log(' -', chunkName)
                     }
                   }
                 }
               )
             }
-
+          }
+          else if (status === 'apply') {
             this.chunkCache.forEach(
               (chunkName, chunk) => {
-                if (reloaded.has(chunkName) === false && chunk.status !== WAITING) {
+                if (chunk.status !== WAITING && chunk.status !== LOADING) {
                   chunk.status = WAITING
                   console.log(' -', chunkName)
                 }
