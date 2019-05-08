@@ -23,7 +23,7 @@ const LazyPage = lazy('../pages/Page', {loading: props => 'Loading...'})
 const LazyPage =
   require('react-broker').lazy(
     'src/pages/Page',
-    import(/* webpackChunkName: "src/pages/Page" */ '../pages/Page'),
+    () => import(/* webpackChunkName: "src/pages/Page" */ '../pages/Page'),
     {loading: props => 'Loading...'}
   )
   
@@ -150,8 +150,8 @@ output of your app when using with SSR.
 
 --------------------------------------------------------------------------------
 
-### `Broker.Lazy`
-This is the component created by `react-broker/macro`.
+### `Broker.lazy`
+This is the function created by `react-broker/macro`.
 
 To skip the macro you could do something like this with the Webpack code-splitting
 API:
@@ -159,7 +159,7 @@ API:
 import {lazy} from 'react-broker'
 lazy(
   'uniqueChunkName', 
-  import(/* webpackChunkName: "uniqueChunkName" */'./path/to/component'), 
+  () => import(/* webpackChunkName: "uniqueChunkName" */'./path/to/component'), 
   {loading: props => 'Loading...'}
 )
 ```
