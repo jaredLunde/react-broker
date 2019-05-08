@@ -1,5 +1,5 @@
 import React from 'react'
-import Broker from 'react-broker'
+import * as Broker from 'react-broker'
 import lazy from 'react-broker/macro'
 import {BrowserRouter, StaticRouter, Switch, Route} from 'react-router-dom'
 import routes from './routes'

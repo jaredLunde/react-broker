@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import Broker from 'react-broker'
+import * as Broker from 'react-broker'
 import App from '../App'
 
 

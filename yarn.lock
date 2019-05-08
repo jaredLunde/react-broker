@@ -811,7 +811,7 @@
     "@babel/plugin-transform-react-jsx-self" "^7.0.0"
     "@babel/plugin-transform-react-jsx-source" "^7.0.0"
 
-"@babel/runtime@^7.4.0", "@babel/runtime@^7.4.2":
+"@babel/runtime@^7.4.2":
   version "7.4.4"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.4.4.tgz#dc2e34982eb236803aa27a07fea6857af1b9171d"
   integrity sha512-w0+uT71b6Yi7i5SE0co4NioIpSYS6lLiXvCzWzGSKvpK5vdQtCbICHMj+gbAKAOtxiV6HsVh/MBdaF9EQ6faSg==
@@ -892,11 +892,6 @@
     esutils "^2.0.2"
     lodash "^4.17.11"
     to-fast-properties "^2.0.0"
-
-"@essentials/are-equal@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@essentials/are-equal/-/are-equal-1.0.1.tgz#7575b603d5c214fa81743d0e3fd1f037461c9218"
-  integrity sha512-3qzr3iVaUDw3sCe70A8MJfxA9BUrC6o5170oqhNckId40fPgUDRyPqbjPjcboZbPqCV3gUuQcCWR8+JP9Uissg==
 
 "@stellar-apps/babel-preset-es@^1.0.4":
   version "1.0.4"
@@ -1032,7 +1027,7 @@ babel-plugin-dev-expression@^0.2.1:
   resolved "https://registry.yarnpkg.com/babel-plugin-dev-expression/-/babel-plugin-dev-expression-0.2.1.tgz#d4a7beefefbb50e3f2734990a82a2486cf9eb9ee"
   integrity sha1-1Ke+7++7UOPyc0mQqCokhs+eue4=
 
-babel-plugin-macros@^2.5.0:
+babel-plugin-macros@^2.5.0, babel-plugin-macros@^2.5.1:
   version "2.5.1"
   resolved "https://registry.yarnpkg.com/babel-plugin-macros/-/babel-plugin-macros-2.5.1.tgz#4a119ac2c2e19b458c259b9accd7ee34fd57ec6f"
   integrity sha512-xN3KhAxPzsJ6OQTktCanNpIFnnMsCV+t8OloKxIL72D6+SUZYFn9qfklPgef5HyyDtzYZqqb+fs1S12+gQY82Q==
@@ -1152,13 +1147,6 @@ caniuse-lite@^1.0.30000949:
   version "1.0.30000950"
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30000950.tgz#8c559d66e332b34e919d1086cc6d29c1948856ae"
   integrity sha512-Cs+4U9T0okW2ftBsCIHuEYXXkki7mjXmjCh4c6PzYShk04qDEr76/iC7KwhLoWoY65wcra1XOsRD+S7BptEb5A==
-
-cdll-memoize@^0.1.9:
-  version "0.1.11"
-  resolved "https://registry.yarnpkg.com/cdll-memoize/-/cdll-memoize-0.1.11.tgz#56150e94a63e90d4205545f44685f1860cb9588d"
-  integrity sha512-mW2fka2GWdwZPa7Rj3EUMev59J8cWhI99XWJlLHB84QsyXiS8hNXWXjm52+bUIM0fvNAUxTtWOIoLDP3DLbBcg==
-  dependencies:
-    "@essentials/are-equal" "^1.0.1"
 
 chalk@^2.0.0:
   version "2.4.2"

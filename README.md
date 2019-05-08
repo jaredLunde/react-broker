@@ -21,10 +21,9 @@ const LazyPage = lazy('../pages/Page', {loading: props => 'Loading...'})
 ///////////////////////////////////////////////////////////////////////////////
 
 const LazyPage =
-  (typeof Broker !== 'undefined' ? Broker : require('react-broker').default)(
-    {
-      'src/pages/Page': import(/* webpackChunkName: "src/pages/Page" */ '../pages/Page')
-    },
+  require('react-broker').lazy(
+    'src/pages/Page',
+    import(/* webpackChunkName: "src/pages/Page" */ '../pages/Page'),
     {loading: props => 'Loading...'}
   )
   
@@ -36,7 +35,7 @@ function App () {
 
 ### Requirements
 - Webpack 4+ (because `chunks`)
-- React 16.3+ (because `createContext`)
+- React 16.8+ (because `hooks`)
 - Babel (because `babel-plugin-macros`)
 
 ### Installation
@@ -100,7 +99,7 @@ the latest render phase of the app.
 `Broker.createChunkCache`
 
 ```js
-import Broker from 'react-broker'
+import * as Broker from 'react-broker'
 
 const chunkCache = Broker.createChunkCache()
 
@@ -157,8 +156,12 @@ This is the component created by `react-broker/macro`.
 To skip the macro you could do something like this with the Webpack code-splitting
 API:
 ```js
-import Broker from 'react-broker'
-Broker({uniqueChunkName: import(...)}, {loading: props => 'Loading...'})
+import {lazy} from 'react-broker'
+lazy(
+  'uniqueChunkName', 
+  import(/* webpackChunkName: "uniqueChunkName" */'./path/to/component'), 
+  {loading: props => 'Loading...'}
+)
 ```
 
 #### `Lazy.load()`
@@ -177,7 +180,7 @@ const LazyPage = lazy('./pages/Home')
 Preloads one or several `Lazy` components.
 
 ```js
-import Broker from 'react-broker'
+import * as Broker from 'react-broker'
 import lazy from 'react-broker/macro'
 
 const LazyA = lazy('./A')
@@ -241,7 +244,7 @@ const page = await getMarkupFromTree({
 ```js
 import React from 'react'
 import ReactDOM from 'react-dom'
-import Broker from 'react-broker'
+import * as Broker from 'react-broker'
 import App from '../App'
 
 
@@ -261,7 +264,7 @@ Broker.loadInitial().then(
 import React from 'react'
 import ReactDOMServer from 'react-dom/server'
 import express from 'express'
-import Broker from 'react-broker'
+import * as Broker from 'react-broker'
 import App from '../App'
 
 

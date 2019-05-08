@@ -2,8 +2,7 @@ import React from 'react'
 import ReactDOMServer from 'react-dom/server'
 import express from 'express'
 import emptyArr from 'empty/array'
-import emptyObj from 'empty/object'
-import Broker from 'react-broker'
+import * as Broker from 'react-broker'
 
 
 export default function createRenderer({

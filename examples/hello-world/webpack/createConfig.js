@@ -56,11 +56,15 @@ module.exports = function createConfig (...configs) {
                   [
                     '@stellar-apps/es', {
                       env: {
-                        "useBuiltIns": "usage",
-                        "loose": true,
-                        "modules": false
+                        useBuiltIns: 'usage',
+                        corejs: 3,
+                        loose: true,
+                        modules: false,
+                        ignoreBrowserslistConfig: true,
+                        exclude: ['transform-typeof-symbol'],
+                        targets: {browsers: '>5% in US'},
                       },
-                      "runtime": {corejs: 2}
+                      "runtime": {useESModules: true, helpers: true}
                     }
                   ],
                   '@stellar-apps/react',

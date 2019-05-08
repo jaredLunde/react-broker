@@ -18,14 +18,12 @@ function evaluateMacros({references, state, babel}) {
 // if Broker is defined in the scope then it will use that Broker, otherwise
 // it requires the module.
 function makeLegacyEnsure ({references, state, babel, referencePath}) {
-  const brokerTemplate = babel.template.smart(`
-    (typeof Broker !== 'undefined' ? Broker : require('${pkgName}').default)(
-      PROMISES,
-      OPTIONS
-    )
-  `, {preserveComments: true})
+  const brokerTemplate = babel.template.smart(
+    `require('${pkgName}').lazy(CHUNK_NAME, PROMISE, OPTIONS);`,
+    {preserveComments: true}
+  )
 
-  const {promises, options} = parseArguments(
+  const {promise, chunkName, options} = parseArguments(
     referencePath.parentPath.get('arguments'),
     state,
     babel
@@ -38,23 +36,17 @@ function makeLegacyEnsure ({references, state, babel, referencePath}) {
   // replaces the macro with the new broker template in the source code
   referencePath.parentPath.replaceWith(
     brokerTemplate({
-      PROMISES: toObjectExpression(promises, babel),
+      CHUNK_NAME: babel.types.stringLiteral(chunkName),
+      PROMISE: promise,
       OPTIONS: options
     })
   )
-
-  referencePath.parentPath.get('arguments')[0].get('properties').forEach(
-    prop => {
-      // this adds webpack magic comment for chunks names
-      // prop.get('key') is the key of the current property
-      // prop.get('value') is the value of the current property
-      //     .get('value').get('body') is the import() call expression
-      //     .get('arguments')[0] is the first argument of the import(), which is the source
-      prop.get('value').get('body').get('arguments')[0].addComment(
-        "leading",
-        ` webpackChunkName: ${prop.get('key')} `
-      )
-    }
+  // this adds webpack magic comment for chunks names
+  //     .get('arguments')[1].get('body') is the import() call expression
+  //     .get('arguments')[0] is the first argument of the import(), which is the source
+  referencePath.parentPath.get('arguments')[1].get('body').get('arguments')[0].addComment(
+    "leading",
+    ` webpackChunkName: "${chunkName}" `
   )
 }
 
@@ -81,8 +73,7 @@ function parseArguments (args, state, babel) {
   const {file: {opts: {filename, plugins}}} = state
   const {types: t} = babel
 
-  let chunkName, source
-  const promises = {}
+  let chunkName, source, promise
   const options =
     args.length > 1
     && args[args.length - 1].type !== 'StringLiteral'
@@ -109,12 +100,9 @@ function parseArguments (args, state, babel) {
             : path.join(path.dirname(filename), value)
         chunkName = chunkNameCache.get(source)
         // duplicate imports are not allowed
-        if (promises[chunkName] !== void 0) {
-          throw new Error(`[Broker Error] duplicate import: ${source}`)
-        }
         // creates a function that returns the import promise
         // SEE: https://babeljs.io/docs/en/babel-types#callexpression
-        promises[chunkName] = t.arrowFunctionExpression(
+        promise = t.arrowFunctionExpression(
           [],
           t.callExpression(
             t.identifier('import'),
@@ -127,7 +115,7 @@ function parseArguments (args, state, babel) {
     }
   }
 
-  return {promises, options}
+  return {promise, chunkName, options}
 }
 
 
