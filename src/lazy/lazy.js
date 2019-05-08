@@ -353,6 +353,16 @@ export default function lazy (promises, opt = defaultOpt) {
 
     componentDidMount () {
       this.mounted = true
+      const
+        status = this.props.lazy.getStatus(this.chunkName),
+        component = this.props.lazy.getComponent(this.chunkName)
+
+      if (this.state.status !== status)
+        this.setState({
+          status,
+          component: status === LOADING ? null : component,
+          error: status !== REJECTED ? null : this.state.error
+        })
     }
 
     componentWillUnmount () {
@@ -362,7 +372,7 @@ export default function lazy (promises, opt = defaultOpt) {
 
     // sets LOADING status for chunks that are currently resolving
     resolving =
-      () => this.mounted === true && this.setState(
+      () => this.unmounted === false && this.mounted === true && this.setState(
         ({status}) => status === LOADING ? null : ({
           status: LOADING,
           component: null,
@@ -372,18 +382,24 @@ export default function lazy (promises, opt = defaultOpt) {
 
     // sets RESOLVED status for chunks that have been resolved
     resolved =
-      (chunkName, resolvedComponent) => this.unmounted === false && this.setState({
-        status: RESOLVED,
-        component: resolvedComponent,
-        error: null
-      })
+      (chunkName, resolvedComponent) =>
+        this.unmounted === false
+        && this.mounted === true
+        && this.setState({
+          status: RESOLVED,
+          component: resolvedComponent,
+          error: null
+        })
 
     // sets REJECTED status for chunks that have been rejected
     rejected =
-      (chunkName, error) => this.unmounted === false && this.setState({
-        status: REJECTED,
-        error
-      })
+      (chunkName, error) =>
+        this.unmounted === false
+        && this.mounted === true
+        && this.setState({
+          status: REJECTED,
+          error
+        })
 
     // loads the chunk assigned to this component and passes any
     // defined props along to the promise wrapper
