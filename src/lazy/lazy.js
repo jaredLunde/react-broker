@@ -357,7 +357,7 @@ export default function lazy (promises, opt = defaultOpt) {
         status = this.props.lazy.getStatus(this.chunkName),
         component = this.props.lazy.getComponent(this.chunkName)
 
-      if (this.state.status !== status)
+      if (this.state.status !== status || this.state.component !== component)
         this.setState({
           status,
           component: status === LOADING ? null : component,
@@ -383,9 +383,7 @@ export default function lazy (promises, opt = defaultOpt) {
     // sets RESOLVED status for chunks that have been resolved
     resolved =
       (chunkName, resolvedComponent) =>
-        this.unmounted === false
-        && this.mounted === true
-        && this.setState({
+        this.unmounted === false && this.mounted === true && this.setState({
           status: RESOLVED,
           component: resolvedComponent,
           error: null
