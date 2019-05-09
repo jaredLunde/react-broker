@@ -1,7 +1,7 @@
 ![Wolf of Wall Street gif](https://media.giphy.com/media/8Q31McooUHTNu/giphy.gif)
 # `react-broker`
 
-A  [lightweight](https://bundlephobia.com/result?p=react-broker) library for lazy components using React 16.3+. It's perfect for 
+A  [lightweight](https://bundlephobia.com/result?p=react-broker) library for lazy components using React 16.8+. It's perfect for 
 code splitting and has the simplest SSR story you've ever seen out-of-the-box.
 
 Critically, this package is only intended to work with Webpack, specifically
