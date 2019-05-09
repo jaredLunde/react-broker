@@ -10,6 +10,7 @@ accommodating Parcel or other bundlers. There is also a hard requirement
 for `babel-plugin-macros` (which is shipped with CRA).
 
 ```js
+import {BrokerProvider} from 'react-broker'
 import lazy from 'react-broker/macro'
 
 // Automatically generates dynamic imports for webpack with babel-plugin-macros. 
@@ -29,7 +30,11 @@ const LazyPage =
   
 function App () {
   // Look at me! I'm used like a normal component.
-  return <LazyPage id='1'/>
+  return (
+    <BrokerProvider>
+      <LazyPage id='1'/>
+    </BrokerProvider/>
+   )
 }
 ```
 
