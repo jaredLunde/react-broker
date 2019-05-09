@@ -14,24 +14,22 @@ const
 
 // tracks the chunks used in the rendering of a tree
 const createChunkCache = () => {
-  let map = {}
-  const cache = {
-    get: k => map[k],
-    set: (k, v) => map[k] = v,
-    invalidate: k => delete map[k],
-    // returns an array of chunk names used by the current react tree
-    getChunkNames: () => Object.keys(map),
-    // returns a Set of Webpack chunk objects used by the current react tree
-    getChunks: stats => findChunks(stats, cache.getChunkNames()),
-    // returns a string of <script> tags for Webpack chunks used by the
-    // current react tree
-    getChunkScripts: (stats, opt = {}) => getChunkScripts(stats, cache, opt)
-  }
+  let
+    map = {},
+    cache = {
+      get: k => map[k],
+      set: (k, v) => map[k] = v,
+      invalidate: k => delete map[k],
+      // returns an array of chunk names used by the current react tree
+      getChunkNames: () => Object.keys(map),
+      // returns a Set of Webpack chunk objects used by the current react tree
+      getChunks: stats => findChunks(stats, cache.getChunkNames()),
+      // returns a string of <script> tags for Webpack chunks used by the
+      // current react tree
+      getChunkScripts: (stats, opt = {}) => getChunkScripts(stats, cache, opt)
+    }
 
-  if (__DEV__) {
-    cache.forEach = fn => Object.keys(map).forEach(k => fn(k, map[k]))
-  }
-
+  if (__DEV__) cache.forEach = fn => Object.keys(map).forEach(k => fn(k, map[k]))
   return cache
 }
 
@@ -94,12 +92,10 @@ const loadInitial = (chunkCache = globalChunkCache) => {
     loading.push(
       new Promise(
         resolve => {
-          if (script.getAttribute('data-loaded')) {
+          if (script.getAttribute('data-loaded'))
             resolve()
-          }
-          else {
+          else
             script.addEventListener('load', resolve)
-          }
         }
       )
     )
@@ -116,9 +112,8 @@ const loadInitial = (chunkCache = globalChunkCache) => {
         finally {
           // sets the component in the chunk cache if it is valid
           if (typeof component === 'function') {
-            if (typeof module !== 'undefined' && module.hot) {
+            if (typeof module !== 'undefined' && module.hot)
               __webpack_require__.c[chunks[chunkName]].hot.accept()
-            }
 
             chunkCache.set(chunkName, {status: RESOLVED, component})
           }
@@ -245,9 +240,8 @@ class Provider extends React.Component {
       this.chunkCache.set(chunkName, {status: WAITING})
       promise = promise()
 
-      if (this.context && this.context.waitForPromises) {
+      if (this.context && this.context.waitForPromises)
         this.context.waitForPromises.chunkPromises.push(promise)
-      }
 
       return this.load(chunkName, promise)
     }
