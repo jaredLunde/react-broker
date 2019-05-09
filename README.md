@@ -157,7 +157,7 @@ To skip the macro you could do something like this with the Webpack code-splitti
 API:
 ```js
 import {lazy} from 'react-broker'
-lazy(
+const Component = lazy(
   'uniqueChunkName', 
   () => import(/* webpackChunkName: "uniqueChunkName" */'./path/to/component'), 
   {loading: props => 'Loading...'}
