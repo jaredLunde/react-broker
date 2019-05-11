@@ -35,8 +35,8 @@ const createChunkCache = () => {
 
 // loads an array of Lazy components
 const load = (...instances) => Promise.all(instances.map(i => i.load()))
+// resolves components on the server
 const loadAll = loadPromises
-
 // the purpose of this function is to avoid a flash or loading
 // spinner when your app initially hydrates/renders
 const loadInitial = (chunkCache = globalChunkCache) => {
@@ -54,44 +54,41 @@ const loadInitial = (chunkCache = globalChunkCache) => {
   // preloads the chunk scripts
   for (let script of document.querySelectorAll('script[data-rb]')) {
     loading.push(
-      new Promise(
-        resolve => {
-          if (script.getAttribute('data-loaded'))
-            resolve()
-          else
-            script.addEventListener('load', resolve)
-        }
-      )
+      new Promise(resolve => {
+        if (script.getAttribute('data-loaded'))
+          resolve()
+        else
+          script.addEventListener('load', resolve)
+      })
     )
   }
 
   return Promise.all(loading).then(
-    () => Object.keys(chunks).forEach(
-      chunkName => {
-        let component
+    () => Object.keys(chunks).forEach(chunkName => {
+      let component
 
-        try {
-          component = __webpack_require__(chunks[chunkName]).default
-        }
-        finally {
-          // sets the component in the chunk cache if it is valid
-          if (typeof component === 'function') {
-            if (typeof module !== 'undefined' && module.hot)
-              __webpack_require__.c[chunks[chunkName]].hot.accept()
+      try {
+        component = __webpack_require__(chunks[chunkName]).default
+      }
+      finally {
+        // sets the component in the chunk cache if it is valid
+        if (typeof component === 'function') {
+          if (typeof module !== 'undefined' && module.hot)
+            __webpack_require__.c[chunks[chunkName]].hot.accept()
 
-            chunkCache.set(chunkName, {status: RESOLVED, component})
-          }
+          chunkCache.set(chunkName, {status: RESOLVED, component})
         }
       }
-    )
+    })
   )
 }
 
-const globalChunkCache = createChunkCache()
-const childContextDispatcher = (state, {chunkName, chunk}) => {
-  state.chunks.set(chunkName, chunk)
-  return Object.assign({}, state)
-}
+const
+  globalChunkCache = createChunkCache(),
+  childContextDispatcher = (state, {chunkName, chunk}) => {
+    state.chunks.set(chunkName, chunk)
+    return Object.assign({}, state)
+  }
 
 const Provider = ({
   children,
@@ -208,40 +205,36 @@ const Provider = ({
                 // refresh for some reason
                 chunks = JSON.parse(chunks.firstChild.data)
 
-                Object.keys(chunks).forEach(
-                  chunkName => {
-                    if (typeof module !== 'undefined' && module.hot) {
-                      let component
+                Object.keys(chunks).forEach(chunkName => {
+                  if (typeof module !== 'undefined' && module.hot) {
+                    let component
 
-                      try {
-                        component = __webpack_require__(chunks[chunkName]).default
-                      }
-                      finally {
-                        const chunk = chunkCache.get(chunkName)
-                        chunk.status = WAITING
+                    try {
+                      component = __webpack_require__(chunks[chunkName]).default
+                    }
+                    finally {
+                      const chunk = chunkCache.get(chunkName)
+                      chunk.status = WAITING
 
-                        load(
-                          chunkName,
-                          Promise.resolve(__webpack_require__.c[chunks[chunkName]].exports)
-                        )
+                      load(
+                        chunkName,
+                        Promise.resolve(__webpack_require__.c[chunks[chunkName]].exports)
+                      )
 
-                        __webpack_require__.c[chunks[chunkName]].hot.accept()
-                        console.log(' -', chunkName)
-                      }
+                      __webpack_require__.c[chunks[chunkName]].hot.accept()
+                      console.log(' -', chunkName)
                     }
                   }
-                )
+                })
               }
             }
             else if (status === 'apply') {
-              chunkCache.forEach(
-                (chunkName, chunk) => {
-                  if (chunk.status !== WAITING && chunk.status !== LOADING) {
-                    chunk.status = WAITING
-                    console.log(' -', chunkName)
-                  }
+              chunkCache.forEach((chunkName, chunk) => {
+                if (chunk.status !== WAITING && chunk.status !== LOADING) {
+                  chunk.status = WAITING
+                  console.log(' -', chunkName)
                 }
-              )
+              })
             }
           }
 
