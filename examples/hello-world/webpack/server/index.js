@@ -30,5 +30,13 @@ module.exports = createConfig({
     })
   ],
 
+  resolve: {
+    alias: {
+      react: path.resolve(__dirname, '../../node_modules/react'),
+      'react-dom': path.resolve(__dirname, '../../node_modules/react-dom'),
+      'react-broker': path.resolve(__dirname, '../../../../'),
+    }
+  },
+
   optimization: {minimize: false}
 })

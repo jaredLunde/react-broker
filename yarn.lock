@@ -893,6 +893,11 @@
     lodash "^4.17.11"
     to-fast-properties "^2.0.0"
 
+"@react-hook/server-promises@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@react-hook/server-promises/-/server-promises-1.0.2.tgz#518668a89602ea3858db5b4d6fd8249d08a9d554"
+  integrity sha512-lm1LfP03w8rS349oc5sYYiuXLJTp96hw5yYAT6c8BpgOXg5nd9Vj1vh4w20TMz418wJh1v5dcPEoTLwE+hg0Ew==
+
 "@stellar-apps/babel-preset-es@^1.0.4":
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/@stellar-apps/babel-preset-es/-/babel-preset-es-1.0.4.tgz#e1e05c5e9cdbc4bce5315cd305c2b66ba7bef4fd"
@@ -1027,7 +1032,7 @@ babel-plugin-dev-expression@^0.2.1:
   resolved "https://registry.yarnpkg.com/babel-plugin-dev-expression/-/babel-plugin-dev-expression-0.2.1.tgz#d4a7beefefbb50e3f2734990a82a2486cf9eb9ee"
   integrity sha1-1Ke+7++7UOPyc0mQqCokhs+eue4=
 
-babel-plugin-macros@^2.5.0, babel-plugin-macros@^2.5.1:
+babel-plugin-macros@^2.5.0:
   version "2.5.1"
   resolved "https://registry.yarnpkg.com/babel-plugin-macros/-/babel-plugin-macros-2.5.1.tgz#4a119ac2c2e19b458c259b9accd7ee34fd57ec6f"
   integrity sha512-xN3KhAxPzsJ6OQTktCanNpIFnnMsCV+t8OloKxIL72D6+SUZYFn9qfklPgef5HyyDtzYZqqb+fs1S12+gQY82Q==

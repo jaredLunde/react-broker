@@ -1,5 +1,5 @@
-import React, {useContext, useEffect, useCallback, useMemo} from 'react'
-import PropTypes from 'prop-types'
+import React, {useContext, useEffect, useCallback, useMemo, useReducer} from 'react'
+import {ServerPromisesContext, loadPromises} from '@react-hook/server-promises'
 import {getChunkScripts, findChunks} from './utils'
 
 
@@ -40,38 +40,13 @@ const load = (...instances) => Promise.all(instances.map(i => i.load()))
 class WaitForPromises {
   // Map from Query component instances to pending promises.
   chunkPromises = []
-
+  push = (...args) => this.chunkPromises.push(...args)
   load () {
     return Promise.all(this.chunkPromises).then(() => this.chunkPromises = [])
   }
 }
 
-const loadAll = (app, render = require('react-dom/server').renderToStaticMarkup) => {
-  const waitForPromises = new WaitForPromises()
-
-  class WaitForPromisesProvider extends React.Component {
-    static childContextTypes = {
-      waitForPromises: PropTypes.object,
-    }
-
-    getChildContext () {
-      return {waitForPromises}
-    }
-
-    render () {
-      return app
-    }
-  }
-
-  const process = () => {
-    const html = render(<WaitForPromisesProvider/>)
-    return waitForPromises.chunkPromises.length > 0
-      ? waitForPromises.load().then(process)
-      : html
-  }
-
-  return Promise.resolve().then(process)
-}
+const loadAll = loadPromises
 
 // the purpose of this function is to avoid a flash or loading
 // spinner when your app initially hydrates/renders
@@ -124,203 +99,216 @@ const loadInitial = (chunkCache = globalChunkCache) => {
 }
 
 const globalChunkCache = createChunkCache()
-
-class Provider extends React.Component {
-  static contextTypes = {
-    waitForPromises: PropTypes.object
+const childContextDispatcher = (state, action) => {
+  if (action.type === 'addChunk') {
+    const nextState = Object.assign({}, state)
+    nextState.chunks = Object.assign({}, state.chunks)
+    nextState.chunks[action.chunkName] = action.chunk
+    return nextState
   }
 
-  constructor (props) {
-    super(props)
-    // if there wasn't a chunkCache explicitly provided, one is created
-    this.chunkCache = props.chunkCache || globalChunkCache
-    // this is the context that is provided to the LazyConsumers
-    this.state = {
-      load: this.load,
-      add: this.add,
-      getError: this.getError,
-      getStatus: this.getStatus,
-      getComponent: this.getComponent,
-      chunks: {}
-    }
-  }
+  return state
+}
 
-  componentDidMount () {
-    // this clears the chunk cache when HMR disposes of a module
-    if (__DEV__) {
-      if (typeof module !== 'undefined' && module.hot) {
-        this.invalidateChunks = status => {
-          if (status === 'idle') {
-            // fetches any preloaded chunks
-            console.log('[Broker HMR] reloading')
-            let chunks = document.getElementById('__INITIAL_BROKER_CHUNKS__')
+const Provider = ({
+  children,
+  chunkCache = globalChunkCache,
+  ssrContext = ServerPromisesContext
+}) => {
+  const context = useContext(ssrContext)
+  const getStatus = useCallback(
+    chunkName => {
+      // gets the cached status of a given chunk name
+      const chunk = chunkCache.get(chunkName)
+      return chunk === void 0 ? WAITING : chunk.status
+    },
+    [chunkCache]
+  )
 
-            if (!!chunks) {
-              // initial chunks were loaded and we need this workaround to get them to
-              // refresh for some reason
-              chunks = JSON.parse(chunks.firstChild.data)
+  const getComponent = useCallback(
+    chunkName => {
+      // gets the cached component for a given chunk name
+      const chunk = chunkCache.get(chunkName)
+      return chunk && chunk.component
+    },
+    [chunkCache]
+  )
 
-              Object.keys(chunks).forEach(
-                chunkName => {
-                  if (typeof module !== 'undefined' && module.hot) {
-                    let component
+  const getError = useCallback(
+    chunkName => {
+      // gets the cached component for a given chunk name
+      const chunk = chunkCache.get(chunkName)
+      return chunk && chunk.error
+    },
+    [chunkCache]
+  )
 
-                    try {
-                      component = __webpack_require__(chunks[chunkName]).default
+  const setChunk = useCallback(
+    (chunkName, chunk) => dispatchChildContext({type: 'addChunk', chunkName, chunk}),
+    emptyArr
+  )
+
+  const resolved = useCallback(
+    (chunkName, component) => {
+      // updates a chunk's consumers when the chunk is resolved and sets the
+      // chunk status to 'RESOLVED'
+      const chunk = chunkCache.get(chunkName)
+
+      if (chunk.status !== RESOLVED) {
+        chunk.status = RESOLVED
+        // modules typically resolve with a 'default' attribute, but some don't.
+        // likewise, fetch() never resolves with a 'default' attribute.
+        chunk.component =
+          component && component.default !== void 0
+            ? component.default
+            : component
+        // updates each chunk listener with the resolved component
+        setChunk(chunkName, chunk)
+      }
+
+      return chunk.component
+    },
+    [chunkCache, setChunk]
+  )
+
+  const rejected = useCallback(
+    (chunkName, error) => {
+      // updates a chunk's consumers when the chunk is rejected and sets the
+      // chunk status to 'REJECTED'
+      const chunk = chunkCache.get(chunkName)
+
+      if (chunk.status !== REJECTED) {
+        chunk.status = REJECTED
+        chunk.error = error
+        // updates each chunk listener with the caught error
+        setChunk(chunkName, chunk)
+      }
+
+      return error
+    },
+    [chunkCache, setChunk]
+  )
+
+  const load = useCallback(
+   (chunkName, promise) => {
+      // loads a given chunk and updates its consumers when it is resolved or
+      // rejected. also sets the chunk's status to 'LOADING' if it hasn't
+      // already resolved
+      const chunk = chunkCache.get(chunkName)
+
+      if (chunk.status === WAITING) {
+        // tells registered components that we've started loading this chunk
+        chunk.promise =
+          promise
+            .then(component => resolved(chunkName, component))
+            .catch(err => rejected(chunkName, err))
+        chunk.status = LOADING
+        setChunk(chunkName, chunk)
+      }
+
+      return chunk.promise
+    },
+    [chunkCache, resolved, rejected, setChunk]
+  )
+
+  const add = useCallback(
+    (chunkName, promise) => {
+      // adds a consumer to @chunkName and updates the consumer's state
+      // when the chunk has resolved
+      const chunk = chunkCache.get(chunkName)
+
+      if (chunk === void 0 || chunk.status === WAITING) {
+        // a circular doubly linked list is used for maintaining the consumers
+        // listening to a chunk's resolution because there are far fewer
+        // operations in deleting a consumer from the listeners than you'd
+        // have with a plain Array
+        chunkCache.set(chunkName, {status: WAITING})
+        promise = promise()
+        if (context) context.push(promise)
+        return load(chunkName, promise)
+      }
+      else {
+        // this chunk is already being listened to so all we need to do is add
+        // the consumer to the list of consumers that need to be updated
+        // once the chunk's promise resolves
+        return chunk.promise
+      }
+    },
+    [chunkCache, load, ssrContext]
+  )
+
+  const [childContext, dispatchChildContext] = useReducer(
+    childContextDispatcher,
+    {load, add, getError, getStatus, getComponent, chunks: {}}
+  )
+
+  if (__DEV__) {
+    useEffect(
+      () => {
+        let invalidateChunks
+
+        if (typeof module !== 'undefined' && module.hot) {
+          invalidateChunks = status => {
+            if (status === 'idle') {
+              // fetches any preloaded chunks
+              console.log('[Broker HMR] reloading')
+              let chunks = document.getElementById('__INITIAL_BROKER_CHUNKS__')
+
+              if (!!chunks) {
+                // initial chunks were loaded and we need this workaround to get them to
+                // refresh for some reason
+                chunks = JSON.parse(chunks.firstChild.data)
+
+                Object.keys(chunks).forEach(
+                  chunkName => {
+                    if (typeof module !== 'undefined' && module.hot) {
+                      let component
+
+                      try {
+                        component = __webpack_require__(chunks[chunkName]).default
+                      }
+                      finally {
+                        const chunk = chunkCache.get(chunkName)
+                        chunk.status = WAITING
+
+                        load(
+                          chunkName,
+                          Promise.resolve(__webpack_require__.c[chunks[chunkName]].exports)
+                        )
+
+                        __webpack_require__.c[chunks[chunkName]].hot.accept()
+                        console.log(' -', chunkName)
+                      }
                     }
-                    finally {
-                      const chunk = this.chunkCache.get(chunkName)
-                      chunk.status = WAITING
-
-                      this.load(
-                        chunkName,
-                        Promise.resolve(__webpack_require__.c[chunks[chunkName]].exports)
-                      )
-
-                      __webpack_require__.c[chunks[chunkName]].hot.accept()
-                      console.log(' -', chunkName)
-                    }
+                  }
+                )
+              }
+            }
+            else if (status === 'apply') {
+              chunkCache.forEach(
+                (chunkName, chunk) => {
+                  if (chunk.status !== WAITING && chunk.status !== LOADING) {
+                    chunk.status = WAITING
+                    console.log(' -', chunkName)
                   }
                 }
               )
             }
           }
-          else if (status === 'apply') {
-            this.chunkCache.forEach(
-              (chunkName, chunk) => {
-                if (chunk.status !== WAITING && chunk.status !== LOADING) {
-                  chunk.status = WAITING
-                  console.log(' -', chunkName)
-                }
-              }
-            )
-          }
+
+          module.hot.addStatusHandler(invalidateChunks)
         }
 
-        module.hot.addStatusHandler(this.invalidateChunks)
-      }
-    }
+        return () => invalidateChunks && module.hot.removeStatusHandler(invalidateChunks)
+      },
+      [load, chunkCache]
+    )
   }
 
-  componentWillUnmount () {
-    if (__DEV__) {
-      typeof module !== 'undefined' && module.hot &&
-      module.hot.removeStatusHandler(this.invalidateChunks)
-    }
-  }
-
-  getStatus = chunkName => {
-    // gets the cached status of a given chunk name
-    const chunk = this.chunkCache.get(chunkName)
-    return chunk === void 0 ? WAITING : chunk.status
-  }
-
-  getComponent = chunkName => {
-    // gets the cached component for a given chunk name
-    const chunk = this.chunkCache.get(chunkName)
-    return chunk && chunk.component
-  }
-
-  getError = chunkName => {
-    // gets the cached component for a given chunk name
-    const chunk = this.chunkCache.get(chunkName)
-    return chunk && chunk.error
-  }
-
-  add = (chunkName, promise) => {
-    // adds a consumer to @chunkName and updates the consumer's state
-    // when the chunk has resolved
-    const chunk = this.chunkCache.get(chunkName)
-
-    if (chunk === void 0 || chunk.status === WAITING) {
-      // a circular doubly linked list is used for maintaining the consumers
-      // listening to a chunk's resolution because there are far fewer
-      // operations in deleting a consumer from the listeners than you'd
-      // have with a plain Array
-      this.chunkCache.set(chunkName, {status: WAITING})
-      promise = promise()
-
-      if (this.context && this.context.waitForPromises)
-        this.context.waitForPromises.chunkPromises.push(promise)
-
-      return this.load(chunkName, promise)
-    }
-    else {
-      // this chunk is already being listened to so all we need to do is add
-      // the consumer to the list of consumers that need to be updated
-      // once the chunk's promise resolves
-      return chunk.promise
-    }
-  }
-
-  setChunk = (chunkName, chunk) => this.setState(
-    ({chunks}) => {
-      chunks = Object.assign({}, chunks)
-      chunks[chunkName] = chunk
-      return {chunks}
-    }
-  )
-
-  load = (chunkName, promise) => {
-    // loads a given chunk and updates its consumers when it is resolved or
-    // rejected. also sets the chunk's status to 'LOADING' if it hasn't
-    // already resolved
-    const chunk = this.chunkCache.get(chunkName)
-
-    if (chunk.status === WAITING) {
-      // tells registered components that we've started loading this chunk
-      chunk.promise =
-        promise
-          .then(component => this.resolved(chunkName, component))
-          .catch(err => this.rejected(chunkName, err))
-      chunk.status = LOADING
-      this.setChunk(chunkName, chunk)
-    }
-
-    return chunk.promise
-  }
-
-  resolved = (chunkName, component) => {
-    // updates a chunk's consumers when the chunk is resolved and sets the
-    // chunk status to 'RESOLVED'
-    const chunk = this.chunkCache.get(chunkName)
-
-    if (chunk.status !== RESOLVED) {
-      chunk.status = RESOLVED
-      // modules typically resolve with a 'default' attribute, but some don't.
-      // likewise, fetch() never resolves with a 'default' attribute.
-      chunk.component =
-        component && component.default !== void 0
-          ? component.default
-          : component
-      // updates each chunk listener with the resolved component
-      this.setChunk(chunkName, chunk)
-    }
-
-    return chunk.component
-  }
-
-  rejected = (chunkName, error) => {
-    // updates a chunk's consumers when the chunk is rejected and sets the
-    // chunk status to 'REJECTED'
-    const chunk = this.chunkCache.get(chunkName)
-
-    if (chunk.status !== REJECTED) {
-      chunk.status = REJECTED
-      chunk.error = error
-      // updates each chunk listener with the caught error
-      this.setChunk(chunkName, chunk)
-    }
-
-    return error
-  }
-
-  render () {
-    return <BrokerContext.Provider
-      value={this.state}
-      children={React.Children.only(this.props.children)}
-    />
-  }
+  return <BrokerContext.Provider
+    value={childContext}
+    children={React.Children.only(children)}
+  />
 }
 
 const
