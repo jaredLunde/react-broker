@@ -35,17 +35,6 @@ const createChunkCache = () => {
 
 // loads an array of Lazy components
 const load = (...instances) => Promise.all(instances.map(i => i.load()))
-
-// preloads all of the async components used in the current react tree
-class WaitForPromises {
-  // Map from Query component instances to pending promises.
-  chunkPromises = []
-  push = (...args) => this.chunkPromises.push(...args)
-  load () {
-    return Promise.all(this.chunkPromises).then(() => this.chunkPromises = [])
-  }
-}
-
 const loadAll = loadPromises
 
 // the purpose of this function is to avoid a flash or loading
@@ -313,6 +302,5 @@ export {
   loadInitial,
   createChunkCache,
   findChunks,
-  getChunkScripts,
-  WaitForPromises
+  getChunkScripts
 }
