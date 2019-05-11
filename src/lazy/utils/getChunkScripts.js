@@ -3,7 +3,7 @@ import path from 'path'
 import findChunks, {getRegex} from "./findChunks"
 
 
-const isExternalDefault = (regex, chunkName, mod) => (
+const isExternalDefault = (regex, chunkName, mod) =>
   mod
   && mod.providedExports !== null
   && mod.providedExports.indexOf('default') > -1
@@ -13,15 +13,12 @@ const isExternalDefault = (regex, chunkName, mod) => (
     mod.issuerName === null
     || mod.identifier.indexOf(path.dirname(mod.issuerName).replace(/^\./, '')) === -1
   )
-)
 
-const reCache = {}
-const relativePkg = /^\.\//
+const reCache = {}, relativePkg = /^\.\//
+
 export const getRelRegex = (chunkName) => {
-  if (!reCache[chunkName]) {
+  if (!reCache[chunkName])
     reCache[chunkName] = new RegExp(`/${chunkName.replace(relativePkg, '')}((/index)*\.(m?jsx?|tsx?))+`)
-  }
-
   return reCache[chunkName]
 }
 
@@ -32,30 +29,31 @@ const isRelativeDefault = (relRegex, chunkName, mod) =>
   && relRegex.test(mod.identifier)
 
 export default function getChunkScripts (stats, cache, {async = true, defer, preload}) {
-  let scripts = []
-  let preloads = []
-  const resolve = fn => url.resolve(stats.publicPath, fn)
-  let preloadAttrs = ''
+  let
+    scripts = [],
+    preloads = [],
+    resolve = fn => url.resolve(stats.publicPath, fn),
+    preloadAttrs = ''
 
   if (typeof preload === 'object') {
     preloadAttrs = Object.keys(preload).map(k => `${k}="${preload[k]}"`).join(' ')
     preloadAttrs = ` ${preloadAttrs}`
   }
 
-  let i, j, k
-  let chunkNames = cache.getChunkNames()
-  const moduleIds = {}
+  let i, j, k, moduleIds = {}, chunkNames = cache.getChunkNames()
 
   for (let chunk of findChunks(stats, chunkNames)) {
     for (i = 0; i < chunk.files.length; i++) {
-      const file = chunk.files[i]
-      const filename = resolve(file)
-      const rbNames = []
+      const
+        file = chunk.files[i],
+        filename = resolve(file),
+        rbNames = []
 
       for (j = chunkNames.length - 1; j > -1; j--) {
-        const chunkName = chunkNames[j]
-        const modRegex = getRegex(chunkName)
-        const relRegex = getRelRegex(chunkName)
+        const
+          chunkName = chunkNames[j],
+          modRegex = getRegex(chunkName),
+          relRegex = getRelRegex(chunkName)
 
         for (k = 0; k < chunk.modules.length; k++) {
           const mod = chunk.modules[k]
@@ -75,12 +73,10 @@ export default function getChunkScripts (stats, cache, {async = true, defer, pre
       if (preload) {
         const p = `<link rel="preload" as="script" href="${filename}"${preloadAttrs}>`
 
-        if (chunk.entry || chunk.initial) {
+        if (chunk.entry || chunk.initial)
           preloads.unshift(p)
-        }
-        else {
+        else
           preloads.push(p)
-        }
       }
 
       scripts.push(

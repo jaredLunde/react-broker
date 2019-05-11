@@ -7,10 +7,10 @@ import {getChunkScripts, findChunks} from './utils'
 // current react tree depend on which corresponding chunks/promises
 const
   BrokerContext = React.createContext({}),
-  WAITING = 0b0,   // promise has not yet started loading
-  LOADING = 0b1,   // promise has started loading
-  REJECTED = 0b10, // promise was rejected
-  RESOLVED = 0b11 // promise was successfully resolved
+  WAITING = 0,   // promise has not yet started loading
+  LOADING = 1,   // promise has started loading
+  REJECTED = -1, // promise was rejected
+  RESOLVED = 3   // promise was successfully resolved
 
 // tracks the chunks used in the rendering of a tree
 const createChunkCache = () => {
@@ -99,15 +99,9 @@ const loadInitial = (chunkCache = globalChunkCache) => {
 }
 
 const globalChunkCache = createChunkCache()
-const childContextDispatcher = (state, action) => {
-  if (action.type === 'addChunk') {
-    const nextState = Object.assign({}, state)
-    nextState.chunks = Object.assign({}, state.chunks)
-    nextState.chunks[action.chunkName] = action.chunk
-    return nextState
-  }
-
-  return state
+const childContextDispatcher = (state, {chunkName, chunk}) => {
+  state.chunks.set(chunkName, chunk)
+  return Object.assign({}, state)
 }
 
 const Provider = ({
@@ -116,37 +110,6 @@ const Provider = ({
   ssrContext = ServerPromisesContext
 }) => {
   const context = useContext(ssrContext)
-  const getStatus = useCallback(
-    chunkName => {
-      // gets the cached status of a given chunk name
-      const chunk = chunkCache.get(chunkName)
-      return chunk === void 0 ? WAITING : chunk.status
-    },
-    [chunkCache]
-  )
-
-  const getComponent = useCallback(
-    chunkName => {
-      // gets the cached component for a given chunk name
-      const chunk = chunkCache.get(chunkName)
-      return chunk && chunk.component
-    },
-    [chunkCache]
-  )
-
-  const getError = useCallback(
-    chunkName => {
-      // gets the cached component for a given chunk name
-      const chunk = chunkCache.get(chunkName)
-      return chunk && chunk.error
-    },
-    [chunkCache]
-  )
-
-  const setChunk = useCallback(
-    (chunkName, chunk) => dispatchChildContext({type: 'addChunk', chunkName, chunk}),
-    emptyArr
-  )
 
   const resolved = useCallback(
     (chunkName, component) => {
@@ -159,16 +122,14 @@ const Provider = ({
         // modules typically resolve with a 'default' attribute, but some don't.
         // likewise, fetch() never resolves with a 'default' attribute.
         chunk.component =
-          component && component.default !== void 0
-            ? component.default
-            : component
+          component && component.default !== void 0 ? component.default : component
         // updates each chunk listener with the resolved component
-        setChunk(chunkName, chunk)
+        dispatchChildContext({chunkName, chunk})
       }
 
       return chunk.component
     },
-    [chunkCache, setChunk]
+    [chunkCache]
   )
 
   const rejected = useCallback(
@@ -181,12 +142,12 @@ const Provider = ({
         chunk.status = REJECTED
         chunk.error = error
         // updates each chunk listener with the caught error
-        setChunk(chunkName, chunk)
+        dispatchChildContext({chunkName, chunk})
       }
 
       return error
     },
-    [chunkCache, setChunk]
+    [chunkCache]
   )
 
   const load = useCallback(
@@ -203,12 +164,12 @@ const Provider = ({
             .then(component => resolved(chunkName, component))
             .catch(err => rejected(chunkName, err))
         chunk.status = LOADING
-        setChunk(chunkName, chunk)
+        dispatchChildContext({chunkName, chunk})
       }
 
       return chunk.promise
     },
-    [chunkCache, resolved, rejected, setChunk]
+    [chunkCache, resolved, rejected]
   )
 
   const add = useCallback(
@@ -237,10 +198,9 @@ const Provider = ({
     [chunkCache, load, ssrContext]
   )
 
-  const [childContext, dispatchChildContext] = useReducer(
-    childContextDispatcher,
-    {load, add, getError, getStatus, getComponent, chunks: {}}
-  )
+  const
+    initialState = () => ({load, add, chunks: chunkCache}),
+    [childContext, dispatchChildContext] = useReducer(childContextDispatcher, null, initialState)
 
   if (__DEV__) {
     useEffect(
@@ -305,10 +265,7 @@ const Provider = ({
     )
   }
 
-  return <BrokerContext.Provider
-    value={childContext}
-    children={React.Children.only(children)}
-  />
+  return <BrokerContext.Provider value={childContext} children={children}/>
 }
 
 const
@@ -320,24 +277,24 @@ const lazy = (chunkName, promise, opt = defaultOpt) => {
   const Lazy = props => {
     const
       broker = useContext(BrokerContext),
-      load = useCallback(() => broker.load(chunkName, promise), emptyArr)
-    useMemo(() => broker.add(chunkName, promise), emptyArr)
+      load = useCallback(() => broker.load(chunkName, promise), emptyArr),
+      p = useMemo(() => broker.add(chunkName, promise), emptyArr),
+      chunk = broker.chunks.get(chunkName)
 
-    switch (broker.getStatus(chunkName)) {
-      case WAITING:
-      case LOADING:
-        // returns 'loading' component
-        return opt.loading ? opt.loading(props, {retry: load, error: null}) : null
+    switch (chunk?.status) {
       case REJECTED:
         // returns 'error' component
         // if there isn't an explicitly defined 'error' component, the
         // 'loading' component will be used as a backup with the error
         // message passed in the second argument
         const render = opt.error || opt.loading
-        return render ? render(props, {retry: load, error: broker.getError(chunkName)}) : null
+        return render ? render(props, {retry: load, error: chunk.error}) : null
       case RESOLVED:
         // returns the proper resolved component
-        return React.createElement(broker.getComponent(chunkName), props)
+        return React.createElement(chunk.component, props)
+      default:
+        // returns 'loading' component
+        return opt.loading ? opt.loading(props, {retry: load, error: null}) : null
     }
   }
   // necessary for calling Component.load from the application code

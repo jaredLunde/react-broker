@@ -1,10 +1,8 @@
 import React from 'react'
 
 
-export default function UserList ({users, render}) {
-  return (
-    <ul>
-      {users.map(render)}
-    </ul>
-  )
-}
+export default ({users, render}) => (
+  <ul>
+    {users.map(data => React.createElement(render, {key: data.id, ...data}))}
+  </ul>
+)

@@ -1,29 +1,30 @@
-const reCache = {}
-const relativePkg = /^\.\//
+const reCache = new Map(), relativePkg = /^\.\//
+
 export const getRegex = chunkName => {
-  if (!reCache[chunkName]) {
-    reCache[chunkName] = new RegExp(`/${chunkName.replace(
-      relativePkg,
-      '',
-    )}((\/index)?\.(m?jsx?|tsx?))?`)
+  let re = reCache.get(chunkName)
+
+  if (re === void 0) {
+    re = new RegExp(`/${chunkName.replace(relativePkg, '',)}((\/index)?\.(m?jsx?|tsx?))?`)
+    reCache.set(chunkName, re)
   }
 
-  return reCache[chunkName]
+  return re
 }
+
 export default function findChunks (stats, chunkNames) {
   chunkNames = chunkNames.slice(0) // avoids unintended mutations via cloning
 
-  const chunks = new Set()
-  const chunkMap = {}
-  let i, j, k
+  let
+    chunks = new Set(),
+    chunkMap = new Map(),
+    i = 0,
+    j,
+    k
 
-  for (i = 0; i < stats.chunks.length; i++) {
+  for (; i < stats.chunks.length; i++) {
     const chunk = stats.chunks[i]
-    chunkMap[chunk.id] = chunk
-
-    if (chunk.entry) {
-      chunks.add(chunk)
-    }
+    chunkMap.set(chunk.id, chunk)
+    if (chunk.entry) chunks.add(chunk)
   }
 
   for (i = chunkNames.length - 1; i > -1; i--) {
@@ -40,8 +41,9 @@ export default function findChunks (stats, chunkNames) {
   }
 
   for (i = chunkNames.length - 1; i > -1; i--) {
-    const chunkName = chunkNames[i]
-    const regex = getRegex(chunkName)
+    const
+      chunkName = chunkNames[i],
+      regex = getRegex(chunkName)
 
     for (j = 0; j < stats.chunks.length; j++) {
       const chunk = stats.chunks[j]
@@ -61,10 +63,8 @@ export default function findChunks (stats, chunkNames) {
 
   for (i = 0; i < chunkArray.length; i++) {
     const chunk = chunkArray[i]
-
-    for (j = 0; j < chunk.siblings.length; j++) {
-      chunks.add(chunkMap[chunk.siblings[j]])
-    }
+    for (j = 0; j < chunk.siblings.length; j++)
+      chunks.add(chunkMap.get(chunk.siblings[j]))
   }
 
   for (i = 0; i < chunkArray.length; i++) {
