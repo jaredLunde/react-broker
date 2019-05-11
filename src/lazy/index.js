@@ -160,24 +160,17 @@ const Provider = ({
 
   const add = useCallback(
     (chunkName, promise) => {
-      // adds a consumer to @chunkName and updates the consumer's state
-      // when the chunk has resolved
       const chunk = chunkCache.get(chunkName)
 
       if (chunk === void 0 || chunk.status === WAITING) {
-        // a circular doubly linked list is used for maintaining the consumers
-        // listening to a chunk's resolution because there are far fewer
-        // operations in deleting a consumer from the listeners than you'd
-        // have with a plain Array
+        // adds the chunk to the chunk cache
         chunkCache.set(chunkName, {status: WAITING})
         promise = promise()
         if (context) context.push(promise)
         return load(chunkName, promise)
       }
       else {
-        // this chunk is already being listened to so all we need to do is add
-        // the consumer to the list of consumers that need to be updated
-        // once the chunk's promise resolves
+        // this chunk has already resolved
         return chunk.promise
       }
     },
