@@ -7,7 +7,7 @@ code splitting and has the simplest SSR story you've ever seen out-of-the-box.
 Critically, this package is only intended to work with Webpack, specifically
 Webpack 4 and future versions. There are no plans to implement a design
 accommodating Parcel or other bundlers. There is also a hard requirement
-for `babel-plugin-macros` (which is shipped with CRA).
+for `babel-plugin-macros` (which is shipped with CRA) if you opt to uze the macro.
 
 ```js
 import {BrokerProvider} from 'react-broker'
