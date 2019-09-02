@@ -1,7 +1,0 @@
-# Remote Sync
-node_modules
-.babelrc
-*.log
-next
-.idea
-*.bak

@@ -1,12 +1,4 @@
-# Remote Sync
 node_modules
-/cjs
-/es
-.DS_Store
-*.log
-/macro
-/cjs.macro
 dist
-next
-.idea
-*.bak
+macro
+coverage

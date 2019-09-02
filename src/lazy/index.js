@@ -1,24 +1,27 @@
-import React, {useContext, useEffect, useCallback, useMemo, useReducer} from 'react'
+import React, {
+  useContext,
+  useEffect,
+  useCallback,
+  useMemo,
+  useReducer,
+} from 'react'
 import {ServerPromisesContext, loadPromises} from '@react-hook/server-promises'
 import {getChunkScripts, findChunks} from './utils'
 
-
 // context is necessary for keeping track of which components in the
 // current react tree depend on which corresponding chunks/promises
-const
-  BrokerContext = React.createContext({}),
-  WAITING = 0,   // promise has not yet started loading
-  LOADING = 1,   // promise has started loading
+const BrokerContext = React.createContext({}),
+  WAITING = 0, // promise has not yet started loading
+  LOADING = 1, // promise has started loading
   REJECTED = -1, // promise was rejected
-  RESOLVED = 3   // promise was successfully resolved
+  RESOLVED = 3 // promise was successfully resolved
 
 // tracks the chunks used in the rendering of a tree
 const createChunkCache = () => {
-  let
-    map = {},
+  let map = {},
     cache = {
       get: k => map[k],
-      set: (k, v) => map[k] = v,
+      set: (k, v) => (map[k] = v),
       invalidate: k => delete map[k],
       // returns an array of chunk names used by the current react tree
       getChunkNames: () => Object.keys(map),
@@ -26,10 +29,11 @@ const createChunkCache = () => {
       getChunks: stats => findChunks(stats, cache.getChunkNames()),
       // returns a string of <script> tags for Webpack chunks used by the
       // current react tree
-      getChunkScripts: (stats, opt = {}) => getChunkScripts(stats, cache, opt)
+      getChunkScripts: (stats, opt = {}) => getChunkScripts(stats, cache, opt),
     }
 
-  if (__DEV__) cache.forEach = fn => Object.keys(map).forEach(k => fn(k, map[k]))
+  if (__DEV__)
+    cache.forEach = fn => Object.keys(map).forEach(k => fn(k, map[k]))
   return cache
 }
 
@@ -55,22 +59,19 @@ const loadInitial = (chunkCache = globalChunkCache) => {
   for (let script of document.querySelectorAll('script[data-rb]')) {
     loading.push(
       new Promise(resolve => {
-        if (script.getAttribute('data-loaded'))
-          resolve()
-        else
-          script.addEventListener('load', resolve)
+        if (script.getAttribute('data-loaded')) resolve()
+        else script.addEventListener('load', resolve)
       })
     )
   }
 
-  return Promise.all(loading).then(
-    () => Object.keys(chunks).forEach(chunkName => {
+  return Promise.all(loading).then(() =>
+    Object.keys(chunks).forEach(chunkName => {
       let component
 
       try {
         component = __webpack_require__(chunks[chunkName]).default
-      }
-      finally {
+      } finally {
         // sets the component in the chunk cache if it is valid
         if (typeof component === 'function') {
           if (typeof module !== 'undefined' && module.hot)
@@ -83,8 +84,7 @@ const loadInitial = (chunkCache = globalChunkCache) => {
   )
 }
 
-const
-  globalChunkCache = createChunkCache(),
+const globalChunkCache = createChunkCache(),
   childContextDispatcher = (state, {chunkName, chunk}) => {
     state.chunks.set(chunkName, chunk)
     return Object.assign({}, state)
@@ -93,7 +93,7 @@ const
 const Provider = ({
   children,
   chunkCache = globalChunkCache,
-  ssrContext = ServerPromisesContext
+  ssrContext = ServerPromisesContext,
 }) => {
   const context = useContext(ssrContext)
 
@@ -108,7 +108,9 @@ const Provider = ({
         // modules typically resolve with a 'default' attribute, but some don't.
         // likewise, fetch() never resolves with a 'default' attribute.
         chunk.component =
-          component && component.default !== void 0 ? component.default : component
+          component && component.default !== void 0
+            ? component.default
+            : component
         // updates each chunk listener with the resolved component
         dispatchChildContext({chunkName, chunk})
       }
@@ -137,7 +139,7 @@ const Provider = ({
   )
 
   const load = useCallback(
-   (chunkName, promise) => {
+    (chunkName, promise) => {
       // loads a given chunk and updates its consumers when it is resolved or
       // rejected. also sets the chunk's status to 'LOADING' if it hasn't
       // already resolved
@@ -145,10 +147,9 @@ const Provider = ({
 
       if (chunk.status === WAITING) {
         // tells registered components that we've started loading this chunk
-        chunk.promise =
-          promise
-            .then(component => resolved(chunkName, component))
-            .catch(err => rejected(chunkName, err))
+        chunk.promise = promise
+          .then(component => resolved(chunkName, component))
+          .catch(err => rejected(chunkName, err))
         chunk.status = LOADING
         dispatchChildContext({chunkName, chunk})
       }
@@ -168,8 +169,7 @@ const Provider = ({
         promise = promise()
         if (context) context.push(promise)
         return load(chunkName, promise)
-      }
-      else {
+      } else {
         // this chunk has already resolved
         return chunk.promise
       }
@@ -177,84 +177,82 @@ const Provider = ({
     [chunkCache, load, ssrContext]
   )
 
-  const
-    initialState = () => ({load, add, chunks: chunkCache}),
-    [childContext, dispatchChildContext] = useReducer(childContextDispatcher, null, initialState)
+  const initialState = () => ({load, add, chunks: chunkCache}),
+    [childContext, dispatchChildContext] = useReducer(
+      childContextDispatcher,
+      null,
+      initialState
+    )
 
   if (__DEV__) {
-    useEffect(
-      () => {
-        let invalidateChunks
+    useEffect(() => {
+      let invalidateChunks
 
-        if (typeof module !== 'undefined' && module.hot) {
-          invalidateChunks = status => {
-            if (status === 'idle') {
-              // fetches any preloaded chunks
-              console.log('[Broker HMR] reloading')
-              let chunks = document.getElementById('__INITIAL_BROKER_CHUNKS__')
+      if (typeof module !== 'undefined' && module.hot) {
+        invalidateChunks = status => {
+          if (status === 'idle') {
+            // fetches any preloaded chunks
+            console.log('[Broker HMR] reloading')
+            let chunks = document.getElementById('__INITIAL_BROKER_CHUNKS__')
 
-              if (!!chunks) {
-                // initial chunks were loaded and we need this workaround to get them to
-                // refresh for some reason
-                chunks = JSON.parse(chunks.firstChild.data)
+            if (chunks) {
+              // initial chunks were loaded and we need this workaround to get them to
+              // refresh for some reason
+              chunks = JSON.parse(chunks.firstChild.data)
 
-                Object.keys(chunks).forEach(chunkName => {
-                  if (typeof module !== 'undefined' && module.hot) {
-                    let component
+              Object.keys(chunks).forEach(chunkName => {
+                if (typeof module !== 'undefined' && module.hot) {
+                  try {
+                    __webpack_require__(chunks[chunkName]).default
+                  } finally {
+                    const chunk = chunkCache.get(chunkName)
+                    chunk.status = WAITING
 
-                    try {
-                      component = __webpack_require__(chunks[chunkName]).default
-                    }
-                    finally {
-                      const chunk = chunkCache.get(chunkName)
-                      chunk.status = WAITING
-
-                      load(
-                        chunkName,
-                        Promise.resolve(__webpack_require__.c[chunks[chunkName]].exports)
+                    load(
+                      chunkName,
+                      Promise.resolve(
+                        __webpack_require__.c[chunks[chunkName]].exports
                       )
+                    )
 
-                      __webpack_require__.c[chunks[chunkName]].hot.accept()
-                      console.log(' -', chunkName)
-                    }
+                    __webpack_require__.c[chunks[chunkName]].hot.accept()
+                    console.log(' -', chunkName)
                   }
-                })
-              }
-            }
-            else if (status === 'apply') {
-              chunkCache.forEach((chunkName, chunk) => {
-                if (chunk.status !== WAITING && chunk.status !== LOADING) {
-                  chunk.status = WAITING
-                  console.log(' -', chunkName)
                 }
               })
             }
+          } else if (status === 'apply') {
+            chunkCache.forEach((chunkName, chunk) => {
+              if (chunk.status !== WAITING && chunk.status !== LOADING) {
+                chunk.status = WAITING
+                console.log(' -', chunkName)
+              }
+            })
           }
-
-          module.hot.addStatusHandler(invalidateChunks)
         }
 
-        return () => invalidateChunks && module.hot.removeStatusHandler(invalidateChunks)
-      },
-      [load, chunkCache]
-    )
+        module.hot.addStatusHandler(invalidateChunks)
+      }
+
+      return () =>
+        invalidateChunks && module.hot.removeStatusHandler(invalidateChunks)
+    }, [load, chunkCache])
   }
 
-  return <BrokerContext.Provider value={childContext} children={children}/>
+  return <BrokerContext.Provider value={childContext} children={children} />
 }
 
-const
-  BrokerProvider = Provider,
+const BrokerProvider = Provider,
   defaultOpt = {loading: null, error: null},
   emptyArr = []
 
 const lazy = (chunkName, promise, opt = defaultOpt) => {
   const Lazy = props => {
-    const
-      broker = useContext(BrokerContext),
-      load = useCallback(() => broker.load(chunkName, promise), emptyArr),
-      p = useMemo(() => broker.add(chunkName, promise), emptyArr),
+    const broker = useContext(BrokerContext),
+      load = useCallback(() => broker.load(chunkName, promise()), emptyArr),
       chunk = broker.chunks.get(chunkName)
+    useMemo(() => broker.add(chunkName, promise), emptyArr)
+    let render
 
     switch (chunk?.status) {
       case REJECTED:
@@ -262,14 +260,16 @@ const lazy = (chunkName, promise, opt = defaultOpt) => {
         // if there isn't an explicitly defined 'error' component, the
         // 'loading' component will be used as a backup with the error
         // message passed in the second argument
-        const render = opt.error || opt.loading
+        render = opt.error || opt.loading
         return render ? render(props, {retry: load, error: chunk.error}) : null
       case RESOLVED:
         // returns the proper resolved component
         return React.createElement(chunk.component, props)
       default:
         // returns 'loading' component
-        return opt.loading ? opt.loading(props, {retry: load, error: null}) : null
+        return opt.loading
+          ? opt.loading(props, {retry: load, error: null})
+          : null
     }
   }
   // necessary for calling Component.load from the application code
@@ -288,5 +288,5 @@ export {
   loadInitial,
   createChunkCache,
   findChunks,
-  getChunkScripts
+  getChunkScripts,
 }

@@ -1,21 +1,23 @@
-const reCache = new Map(), relativePkg = /^\.\//
+const reCache = new Map(),
+  relativePkg = /^\.\//
 
 export const getRegex = chunkName => {
   let re = reCache.get(chunkName)
 
   if (re === void 0) {
-    re = new RegExp(`/${chunkName.replace(relativePkg, '',)}((\/index)?\.(m?jsx?|tsx?))?`)
+    re = new RegExp(
+      `/${chunkName.replace(relativePkg, '')}((/index)?.(m?jsx?|tsx?))?`
+    )
     reCache.set(chunkName, re)
   }
 
   return re
 }
 
-export default function findChunks (stats, chunkNames) {
+export default function findChunks(stats, chunkNames) {
   chunkNames = chunkNames.slice(0) // avoids unintended mutations via cloning
 
-  let
-    chunks = new Set(),
+  let chunks = new Set(),
     chunkMap = new Map(),
     i = 0,
     j,
@@ -41,17 +43,18 @@ export default function findChunks (stats, chunkNames) {
   }
 
   for (i = chunkNames.length - 1; i > -1; i--) {
-    const
-      chunkName = chunkNames[i],
+    const chunkName = chunkNames[i],
       regex = getRegex(chunkName)
 
     for (j = 0; j < stats.chunks.length; j++) {
       const chunk = stats.chunks[j]
 
       for (k = 0; k < chunk.modules.length; k++) {
-        if ( // does an indexOf first for perf
-          chunk.modules[k].identifier.indexOf(chunkName)
-          && regex.test(chunk.modules[k].identifier)) {
+        if (
+          // does an indexOf first for perf
+          chunk.modules[k].identifier.indexOf(chunkName) &&
+          regex.test(chunk.modules[k].identifier)
+        ) {
           chunkNames.splice(i, 1)
           chunks.add(chunk)
         }

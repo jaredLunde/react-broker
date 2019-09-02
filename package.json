@@ -1,22 +1,40 @@
 {
   "name": "react-broker",
-  "version": "2.0.3",
+  "version": "2.0.5",
   "description": "Component lazy-loading + code splitting that works with SSR, Webpack 4, and Babel 7",
   "main": "dist/cjs/index.js",
   "browser": "dist/es/index.js",
-  "module": "dist/node-es/index.js",
+  "module": "dist/es/index.js",
   "jsnext:main": "dist/es/index.js",
   "esnext": "dist/es/index.js",
-  "repository": "https://github.com/jaredLunde/react-broker",
   "author": "Jared Lunde",
   "license": "MIT",
   "sideEffects": false,
   "private": false,
+  "files": [
+    "/dist",
+    "/macro"
+  ],
   "devDependencies": {
-    "@stellar-apps/babel-preset-es": "^1.0.4",
-    "@stellar-apps/babel-preset-react": "^1.0.1",
-    "prettier": "^1.14.2",
-    "rimraf": "^2.6.2"
+    "@babel/preset-react": "^7.0.0",
+    "@lunde/babel-preset-es": "^1.0.1",
+    "@testing-library/jest-dom": "^4.1.0",
+    "@testing-library/react": "^9.1.3",
+    "@testing-library/react-hooks": "^2.0.1",
+    "babel-eslint": "^10.0.3",
+    "cross-env": "^5.2.1",
+    "eslint": "^6.3.0",
+    "eslint-import-resolver-jest": "^3.0.0",
+    "eslint-plugin-jest": "^22.16.0",
+    "eslint-plugin-react": "^7.14.3",
+    "eslint-plugin-react-hooks": "^2.0.1",
+    "husky": "^3.0.5",
+    "jest": "^24.9.0",
+    "lint-staged": "^9.2.5",
+    "prettier": "^1.18.2",
+    "pretty-quick": "^1.11.1",
+    "react-test-renderer": "^16.9.0",
+    "rimraf": "^3.0.0"
   },
   "dependencies": {
     "@react-hook/server-promises": "^1.0.2"
@@ -28,21 +46,32 @@
     "react-dom": ">= 16.3.0"
   },
   "scripts": {
-    "build": "npm run build:es && npm run build:cjs && npm run build:node-es",
-    "build:es": "npm run build-lazy:es",
-    "build:node-es": "npm run build-lazy:node-es",
-    "build:cjs": "npm run build-lazy:cjs && npm run build-macro",
-    "build-lazy:es": "rimraf dist/es && cross-env NODE_ENV=production BABEL_ENV=es babel src/lazy --out-dir dist/es && npm run prettier:es",
-    "build-lazy:node-es": "rimraf dist/node-es && cross-env NODE_ENV=production BABEL_ENV=node-es babel src/lazy --out-dir dist/node-es",
-    "build-lazy:cjs": "rimraf dist/cjs && cross-env NODE_ENV=production BABEL_ENV=cjs babel src/lazy --out-dir dist/cjs && npm run prettier:cjs",
-    "build-macro": "rimraf macro && cross-env NODE_ENV=production BABEL_ENV=cjs babel src/macro --out-dir macro && npm run prettier-macro",
+    "build": "npm run build:es && npm run build:cjs && npm run build:macro",
+    "build:es": "cross-env BABEL_ENV=es babel src/lazy -d dist/es -x .js  --ignore \"**/*.test.js\",\"**/test.js\" --delete-dir-on-start",
+    "build:cjs": "babel src/lazy -d dist/cjs -x .js --ignore \"**/*.test.js\",\"**/test.js\" --delete-dir-on-start",
+    "build:macro": "babel src/macro -d macro --delete-dir-on-start",
     "watch": "rimraf dist/es && cross-env NODE_ENV=development BABEL_ENV=es babel ./src/lazy -w --out-dir dist/es",
-    "watch-node": "rimraf dist/node-es && cross-env NODE_ENV=development BABEL_ENV=node-es babel ./src/lazy -w --out-dir dist/node-es",
     "watch-macro": "rimraf macro && cross-env NODE_ENV=development BABEL_ENV=cjs babel ./src/macro -w --out-dir macro",
-    "prettier:es": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"dist/es/**/*.js\"",
-    "prettier:cjs": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"dist/cjs/**/*.js\"",
-    "prettier-macro": "prettier --single-quote --no-semi --no-bracket-spacing --trailing-comma es5 --write --tab-width 2 \"macro/**/*.js\"",
-    "prepublishOnly": "yarn build"
+    "format": "npm run format:cjs && npm run format:es && npm run format:macro && npm run format:src",
+    "format:cjs": "prettier --write \"dist/cjs/**/*.js\"",
+    "format:es": "prettier --write \"dist/es/**/*.js\"",
+    "format:macro": "prettier --write \"macro/**/*.js\"",
+    "format:src": "prettier --write \"src/**/*.js\"",
+    "lint": "eslint src",
+    "prepublishOnly": "npm run lint && npm run test && npm run build && npm run format",
+    "test": "jest --passWithNoTests",
+    "validate": "npm run lint && npm run test -- --coverage"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.js": [
+      "eslint",
+      "pretty-quick --staged"
+    ]
   },
   "keywords": [
     "react",
@@ -55,5 +84,13 @@
     "code splitting",
     "babel-plugin-macros",
     "macro"
-  ]
+  ],
+  "homepage": "https://github.com/jaredLunde/react-broker#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jaredLunde/react-broker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jaredLunde/react-broker/issues"
+  }
 }

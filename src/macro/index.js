@@ -1,23 +1,23 @@
 import path from 'path'
 import {createMacro} from 'babel-plugin-macros'
 
-
 const pkgName = 'react-broker'
 export default createMacro(evaluateMacros)
 
 // cycles through each call to the macro and determines an output for each
 function evaluateMacros({references, state, babel}) {
-  references.default.forEach(referencePath => makeLegacyEnsure({
-    references,
-    state,
-    babel,
-    referencePath
-  }))
+  references.default.forEach(referencePath =>
+    makeLegacyEnsure({
+      state,
+      babel,
+      referencePath,
+    })
+  )
 }
 
 // if Broker is defined in the scope then it will use that Broker, otherwise
 // it requires the module.
-function makeLegacyEnsure ({references, state, babel, referencePath}) {
+function makeLegacyEnsure({state, babel, referencePath}) {
   const brokerTemplate = babel.template.smart(
     `require('${pkgName}').lazy(CHUNK_NAME, PROMISE, OPTIONS);`,
     {preserveComments: true}
@@ -38,30 +38,18 @@ function makeLegacyEnsure ({references, state, babel, referencePath}) {
     brokerTemplate({
       CHUNK_NAME: babel.types.stringLiteral(chunkName),
       PROMISE: promise,
-      OPTIONS: options
+      OPTIONS: options,
     })
   )
   // this adds webpack magic comment for chunks names
   //     .get('arguments')[1].get('body') is the import() call expression
   //     .get('arguments')[0] is the first argument of the import(), which is the source
-  referencePath.parentPath.get('arguments')[1].get('body').get('arguments')[0].addComment(
-    "leading",
-    ` webpackChunkName: "${chunkName}" `
-  )
+  referencePath.parentPath
+    .get('arguments')[1]
+    .get('body')
+    .get('arguments')[0]
+    .addComment('leading', ` webpackChunkName: "${chunkName}" `)
 }
-
-
-// creates a Babel object expression from a Javascript object with string keys
-function toObjectExpression (obj, {types: t, template}) {
-  const properties = []
-
-  for (let key in obj) {
-    properties.push(t.objectProperty(t.stringLiteral(key), obj[key]))
-  }
-
-  return t.objectExpression(properties)
-}
-
 
 // relative packages are considered as such when they start with a period '.'
 const relativePkg = /^\./g
@@ -69,15 +57,19 @@ const relativePkg = /^\./g
 // are converted to require.ensure code-split imports. Arrow functions,
 // Identifers, and plain Functions, are all excluded from code-splitting and
 // are interpreted as-is.
-function parseArguments (args, state, babel) {
-  const {file: {opts: {filename, plugins}}} = state
+function parseArguments(args, state, babel) {
+  const {
+    file: {
+      opts: {filename},
+    },
+  } = state
   const {types: t} = babel
 
   let chunkName, source, promise
   const options =
-    args.length > 1
-    && args[args.length - 1].type !== 'StringLiteral'
-    && args[args.length - 1].type !== 'TemplateLiteral'
+    args.length > 1 &&
+    args[args.length - 1].type !== 'StringLiteral' &&
+    args[args.length - 1].type !== 'TemplateLiteral'
       ? args[args.length - 1].node
       : void 0
   args = options === void 0 ? args : args.slice(0, -1)
@@ -104,27 +96,32 @@ function parseArguments (args, state, babel) {
         // SEE: https://babeljs.io/docs/en/babel-types#callexpression
         promise = t.arrowFunctionExpression(
           [],
-          t.callExpression(
-            t.identifier('import'),
-            [t.stringLiteral(source)]
-          )
+          t.callExpression(t.identifier('import'), [t.stringLiteral(source)])
         )
-      break;
+        break
       default:
-        throw new Error(`[Broker Error] Unrecognized argument type: ${arg.type}`)
+        throw new Error(
+          `[Broker Error] Unrecognized argument type: ${arg.type}`
+        )
     }
   }
 
   return {promise, chunkName, options}
 }
 
-
 // shortens the chunk name to its parent directory basename and its basename
-function getShortChunkName (source) {
+function getShortChunkName(source) {
   if (source.match(relativePkg) || path.isAbsolute(source)) {
-    return path.dirname(source).split(path.sep).slice(-2).join('/') + '/' + path.basename(source)
-  }
-  else {
+    return (
+      path
+        .dirname(source)
+        .split(path.sep)
+        .slice(-2)
+        .join('/') +
+      '/' +
+      path.basename(source)
+    )
+  } else {
     return source
   }
 }
@@ -136,7 +133,7 @@ class ChunkNameCache {
   chunks = {}
   chunkNames = new Set()
 
-  get (source, isFunction = false) {
+  get(source) {
     if (this.chunks[source]) {
       return this.chunks[source]
     }
@@ -145,14 +142,14 @@ class ChunkNameCache {
     let originalName = name
     let i = 0
 
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       if (this.chunkNames.has(name)) {
         // if this chunk name is already in use by a different source then we
         // append a unique ID to it
         name = `${originalName}.${i}`
         i++
-      }
-      else {
+      } else {
         break
       }
     }
