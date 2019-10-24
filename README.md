@@ -1,3 +1,8 @@
+[![bundlephobia](https://img.shields.io/bundlephobia/minzip/react-broker?style=for-the-badge)](https://bundlephobia.com/result?p=react-broker)
+[![GitHub](https://img.shields.io/github/license/jaredLunde/react-broker?style=for-the-badge)](https://jaredlunde.mit-license.org/)
+
+----
+
 ![Wolf of Wall Street gif](https://media.giphy.com/media/8Q31McooUHTNu/giphy.gif)
 # `react-broker`
 
