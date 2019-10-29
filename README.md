@@ -1,10 +1,33 @@
-[![bundlephobia](https://img.shields.io/bundlephobia/minzip/react-broker?style=for-the-badge)](https://bundlephobia.com/result?p=react-broker)
-[![GitHub](https://img.shields.io/github/license/jaredLunde/react-broker?style=for-the-badge)](https://jaredlunde.mit-license.org/)
+<hr>
+<div align="center">
+  <h1 align="center">
+    react-broker
+  </h1>
+  <img alt="Wolf of Wall Street Gif" src="https://media.giphy.com/media/8Q31McooUHTNu/giphy.gif">
+</div>
 
-----
+<p align="center">
+  <a href="https://bundlephobia.com/result?p=react-broker">
+    <img alt="Bundlephobia" src="https://img.shields.io/bundlephobia/minzip/react-broker?style=for-the-badge&labelColor=24292e">
+  </a>
+  <!--<a aria-label="Code coverage report" href="https://codecov.io/gh/jaredLunde/react-broker">
+    <img alt="Code coverage" src="https://img.shields.io/codecov/c/gh/jaredLunde/react-broker?style=for-the-badge&labelColor=24292e">
+  </a>
+  <a aria-label="Build status" href="https://travis-ci.org/jaredLunde/react-broker">
+    <img alt="Build status" src="https://img.shields.io/travis/jaredLunde/react-broker?style=for-the-badge&labelColor=24292e">
+  </a>-->
+  <a aria-label="NPM version" href="https://www.npmjs.com/package/react-broker">
+    <img alt="NPM Version" src="https://img.shields.io/npm/v/react-broker?style=for-the-badge&labelColor=24292e">
+  </a>
+  <a aria-label="License" href="https://jaredlunde.mit-license.org/">
+    <img alt="MIT License" src="https://img.shields.io/npm/l/react-broker?style=for-the-badge&labelColor=24292e">
+  </a>
+</p>
 
-![Wolf of Wall Street gif](https://media.giphy.com/media/8Q31McooUHTNu/giphy.gif)
-# `react-broker`
+<pre align="center">
+npm i react-broker
+</pre>
+<hr>
 
 A  [lightweight](https://bundlephobia.com/result?p=react-broker) library for lazy components using React 16.8+. It's perfect for 
 code splitting and has the simplest SSR story you've ever seen out-of-the-box.
