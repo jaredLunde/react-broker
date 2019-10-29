@@ -36,6 +36,8 @@ Webpack 4 and future versions. There are no plans to implement a design
 accommodating Parcel or other bundlers. There is also a hard requirement
 for `babel-plugin-macros` (which is shipped with CRA) if you opt to use the macro.
 
+## Quick Start
+
 ```js
 import {BrokerProvider} from 'react-broker'
 import lazy from 'react-broker/macro'
@@ -70,16 +72,14 @@ function App () {
 - React 16.8+ (because `hooks`)
 - Babel (because `babel-plugin-macros`)
 
-### Installation
-`yarn add react-broker` or `npm i react-broker`
-
 ### Examples
 **[Hello world](examples/hello-world)**<br/>
 **[Hello world w/ Router](examples/hello-world-router)**
 
 --------------------------------------------------------------------------------
 
-## Documentation
+## API
+
 ### `react-broker/macro`
 The function that transforms your imports and delegates your async components.
 
